@@ -1,3 +1,9 @@
+"""
+File to train DON-LSTM starting from a pre-trained DeepONet model.
+Parameters are read from the params_don_add_lstm.py file.
+The pre-trained model is loaded from the folder specified in params_don_add_lstm.py or through passed parameter "--model" (the passed parameter overwrites the parameters file).
+"""
+
 import sys
 sys.path.insert(0, './modules')
 import numpy as np
@@ -14,13 +20,6 @@ import modules.log_functions as log_functions
 import modules.dir_functions as dir_functions
 import params_don_add_lstm as params
 from tensorflow.keras.layers import Dense, Reshape
-
-
-"""
-File to train DON-LSTM starting from a pre-trained DeepONet model.
-Parameters are read from the params_don_add_lstm.py file.
-The pre-trained model is loaded from the folder specified in params_don_add_lstm.py or through passed parameter "--model" (the passed parameter overwrites the parameters file).
-"""
 
 
 #--------------------     PARAMS FOR TESTING     --------------------#
