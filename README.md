@@ -2,8 +2,8 @@
 **DON-LSTM**: Multi-Resolution Learning with DeepONets and Long-Short Term Memory Neural Networks.
 
 This proposed architecture leverages the two main advantages of its subnetworks:
-- DeepONets: The discretization-invariant training,
-- LSTMs: The improved sequential learning through memory-preserving mechanisms.
+- **DeepONets**: The discretization-invariant training,
+- **LSTMs**: The improved sequential learning through memory-preserving mechanisms.
 
 ## Network training
 The files for training the networks:
