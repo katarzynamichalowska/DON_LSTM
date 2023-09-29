@@ -1,3 +1,7 @@
 tensorflow
+keras
 numpy
 pandas
+json
+seaborn
+matplotlib
