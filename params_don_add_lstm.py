@@ -1,3 +1,7 @@
+"""
+Parameters for training DON-LSTM using a pre-trained DeepONet models. These parameters are loaded by train_don_add_lstm.py.
+"""
+
 import os
 PROBLEM_NAME = "burgers"
 N_HIGH_RES = 700
