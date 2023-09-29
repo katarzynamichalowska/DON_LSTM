@@ -14,7 +14,7 @@ import params_model as params
 from modules.testing import compute_metrics
 
 """
-Training DON-LSTM and vanilla DeepONets.
+File for training DeepONets, LSTMs and DON-LSTMs. 
 Parameters are read from the params.py file.
 """
 
