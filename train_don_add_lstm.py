@@ -17,9 +17,9 @@ from tensorflow.keras.layers import Dense, Reshape
 
 
 """
-Train DON-LSTM starting from a pre-trained DeepONet.
+File to train DON-LSTM starting from a pre-trained DeepONet model.
 Parameters are read from the params_don_add_lstm.py file.
-The pre-trained model is loaded from the folder specified in params.py or through passed parameter "--model".
+The pre-trained model is loaded from the folder specified in params_don_add_lstm.py or through passed parameter "--model" (the passed parameter overwrites the parameters file).
 """
 
 
