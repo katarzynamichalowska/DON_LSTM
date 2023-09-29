@@ -1,3 +1,8 @@
+"""
+File to train DeepONets, LSTMs and DON-LSTMs. 
+Parameters are read from the params.py file.
+"""
+
 import sys
 sys.path.insert(0, './modules')
 import numpy as np
@@ -12,11 +17,6 @@ import modules.log_functions as log_functions
 import modules.dir_functions as dir_functions
 import params_model as params
 from modules.testing import compute_metrics
-
-"""
-File to train DeepONets, LSTMs and DON-LSTMs. 
-Parameters are read from the params.py file.
-"""
 
 
 #--------------------     PARAMS FOR TESTING     --------------------#
