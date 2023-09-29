@@ -1,5 +1,5 @@
 # DON_LSTM
-**DON-LSTM**: Multi-Resolution Learning with DeepONets and Long-Short Term Memory Neural Networks
+**DON-LSTM**: Multi-Resolution Learning with DeepONets and Long-Short Term Memory Neural Networks.
 
 This proposed architecture leverages the two main advantages of its subnetworks:
 - DeepONets: The discretization-invariant training,
