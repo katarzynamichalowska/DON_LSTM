@@ -1,4 +1,6 @@
 __pycache__
 multires_models
+models
 data_generation/data
 output
+*.batch
