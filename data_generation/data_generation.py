@@ -48,31 +48,6 @@ def solver_schema(dx, M, gamma, eta):
     
     return f, Df
 
-def midpoint_solve(u0,u1,f,Df,dt,M,N,tol):
-    """
-    Midpoint Newton's method.
-    # What is u1?
-    """
-    I = np.eye(M)
-    u = u0.copy()
-    un = u1.copy()
-    us = np.zeros((N+1,M))
-    # Solve with Newton's method at each step:
-    for i in range(N+1):
-        us[i,:] = u
-        u = un
-        F = lambda un: 1/dt*(un-u) - f((u+un)/2)
-        J = lambda un: 1/dt*I - 1/2*Df((u+un)/2)
-        err = la.norm(f(un))
-        c = 0
-        while err > tol:
-            un = un - la.solve(J(un),F(un))
-            err = la.norm(F(un))
-            c = c+1
-            if c > 5:
-                break
-    return us
-
 def random_initial_condition(x_length, x_points, eta=6.):
     """
     Produce a random initial condition with two waves.
@@ -90,49 +65,12 @@ def random_initial_condition(x_length, x_points, eta=6.):
     
     return u0
 
-def initial_condition_cahn_hilliard(grid_x):
-    """
-    Superposition of two sine and two cosine waves with random parameters.
-    """
-    M = len(grid_x)
-    P = int((grid_x[-1]-grid_x[0])*M/(M-1))
-
-    a0,a1,a2,a3 = np.random.uniform(0,.1,4)
-    b0,b1,b2,b3 = np.random.uniform(0,10,4)
-    u0 = a0*np.sin(b0*np.pi/P*grid_x) + a1*np.cos(b1*np.pi/P*grid_x) + a2*np.sin(b2*np.pi/P*grid_x) + a3*np.cos(b3*np.pi/P*grid_x)
-
-    return u0
-
-def initial_condition_kdv(grid_x, eta=6.):
-    M = len(grid_x)
-    
-    P = int((grid_x[-1]-grid_x[0])*M/(M-1))
-    #k1, k2 = np.random.uniform(0.5, 1, 2) # height
-    k1, k2 = np.random.uniform(0.3, 0.7, 2) # height
-    d1, d2 = np.random.uniform(0, 1, 2) # location
-    s1 = (-6./-eta)*2 * k1**2 * sech(np.abs(k1 * ((grid_x+P/2-P*d1) % P - P/2)))**2
-    s2 = (-6./-eta)*2 * k2**2 * sech(np.abs(k2 * ((grid_x+P/2-P*d2) % P - P/2)))**2
-    u0 = s1 + s2
-    u0 = np.concatenate([u0[M:], u0[:M]], axis=-1)
-
-    return u0
-
-def initial_condition_bbm(grid_x):
-    M = len(grid_x)
-    P = int((grid_x[-1]-grid_x[0])*M/(M-1))
-    c1, c2 = np.random.uniform(1, 3, 2) # height
-    d1, d2 = np.random.uniform(0, 1, 2) # location
-    u0 = 0
-    u0 += 3*(c1-1) * sech(1/2*np.sqrt(1 - 1/c1)*((grid_x+P/2-P*d1) % P - P/2))**2
-    u0 += 3*(c2-1) * sech(1/2*np.sqrt(1 - 1/c2)*((grid_x+P/2-P*d2) % P - P/2))**2
-    u0 = np.concatenate([u0[M:], u0[:M]], axis=-1)
-    return u0
-
 def midpoint_method(u,un,t,f,Df,dt,M,tol,max_iter):
     '''
     Integrating one step of the ODE u_t = f, from u to un,
     with the implicit midpoint method
     Using Newton's method to find un
+    dt = step size
     '''
     I = np.eye(M)
     F = lambda u_hat: 1/dt*(u_hat-u) - f((u+u_hat)/2, t+.5*dt)
@@ -157,6 +95,9 @@ def difference_matrices(P=20, M=100):
     return D1, D2
 
 def grid(P=20, M=100):
+    '''
+    Makes array x from 0 to P-dx, with M number of elements. dx is the size between elements.
+    '''
     dx = P/M
     x = np.linspace(0, P-dx, M)
     return x, dx
@@ -208,7 +149,7 @@ def solve_bbm(u0, grid_x, grid_t):
     x_max = grid_x.max()+dx
     dt = (grid_t.max()/(N-1))
     
-    D1, D2 = difference_matrices(x_max,M)
+    D1, D2 = difference_matrices(x_max, M)
     I = np.eye(M)
     
     g = lambda x, t: 0

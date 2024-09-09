@@ -9,17 +9,6 @@ from data_generation import grid, make_trunk, difference_matrices, midpoint_meth
 seed = 9
 np.random.seed(seed)
 
-def _initial_condition(grid_x, x_max):
-    a0, a1, a2, a3 = np.random.uniform(0,.2,4)
-    k0, k1, k2, k3 = np.random.randint(1,6,4)*2 # Even integers
-    u0 = a0 * np.sin(k0*np.pi / x_max*grid_x)
-    u0+= a1 * np.cos(k1*np.pi / x_max*grid_x) 
-    u0+= a2 * np.sin(k2*np.pi / x_max*grid_x) 
-    u0+= a3 * np.cos(k3*np.pi / x_max*grid_x)
-    
-    return u0
-
-
 nr_realizations = 1000
 folder = "data"
 filename = "data_cahn_hilliard.npz"
@@ -43,6 +32,19 @@ mu = -0.00001
 #nu = -1
 #alpha = -0.001
 #mu = 1
+
+def _initial_condition(grid_x, x_max):
+    '''
+    Superposition of two sine and two cosine waves with random parameters.
+    '''
+    a0, a1, a2, a3 = np.random.uniform(0,.2,4)
+    k0, k1, k2, k3 = np.random.randint(1,6,4)*2 # Even integers
+    u0 = a0 * np.sin(k0*np.pi / x_max*grid_x)
+    u0+= a1 * np.cos(k1*np.pi / x_max*grid_x) 
+    u0+= a2 * np.sin(k2*np.pi / x_max*grid_x) 
+    u0+= a3 * np.cos(k3*np.pi / x_max*grid_x)
+    
+    return u0
 
 g = lambda x, t: 0
 I = np.eye(x_points)
