@@ -62,3 +62,22 @@ def solve(u0, grid_t, f, Df, dt, M):
         
     return u    
     
+def produce_samples(u0, realizations, x, x_points, dx, t, t_points, dt, f, Df, filename):
+    u0_list, u_list = list(), list()
+    for i in range(realizations):
+        if i % 100==0:
+            print(f"Nr samples: {i}")
+        u = solve(u0, t, f, Df, dt, x_points)
+        u0_list.append(u0)    
+        u_list.append(np.array(u)[1:])
+        
+    u, g_u = np.array(u0_list), np.array(u_list)
+    g_u = g_u.reshape([realizations, t_points * x_points])
+
+    # Trunk input (x,t)
+    xt = make_trunk(grid_x=x, grid_t=t)
+
+    print(f"\nData shapes:\n\t u:\t{u.shape}\n\t g_u:\t{g_u.shape}\n\t xt:\t{xt.shape}")
+    print(f"\nx_min:\t\t\t{xt[:,0].min()} \nx_max:\t\t\t{xt[:,0].max()} \nx_points:\t\t{x_points}\ndx:\t\t\t{dx} \nt_min:\t\t\t{xt[:,1].min()} \nt_max:\t\t\t{xt[:,1].max()} \nt_points:\t\t{t_points} \ndt:\t\t\t{dt}")
+
+    np.savez(filename, u=u, xt=xt, g_u=g_u)
