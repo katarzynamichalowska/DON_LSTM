@@ -1,11 +1,14 @@
 """
 Cahn-Hilliard equation.
 """
+import os
 import numpy as np
-from data_generation import produce_samples
+from data_generation import produce_samples, grid, difference_matrices
 import params_generate_data as p
 
 np.random.seed(p.seed)
+
+filename = os.path.join(p.folder, p.filename)
 
 def _initial_condition(grid_x, x_max):
     a0, a1, a2, a3 = np.random.uniform(0, .2, 4)
@@ -16,12 +19,19 @@ def _initial_condition(grid_x, x_max):
     u0+= a3 * np.cos(k3 * np.pi / x_max * grid_x)
     return u0
 
+# Make spatial and temporal grids
+x, dx = grid(p.x_max, p.x_points)
+t, dt = grid(p.t_max + p.dt, p.t_points + 1)          # Added dt and 1 to have t_points in g_u
 
+D1, D2 = difference_matrices(p.x_max, p.x_points)
+
+g = lambda x, t: 0
+I = np.eye(p.x_points)
 
 # Define the equations
-f = lambda u, t: np.matmul(p.D2, p.nu * u + p.alpha * u**3 + p.mu * np.matmul(p.D2, u)) + p.g(p.x, t)
-Df = lambda u: np.matmul(p.D2, p.nu * p.I + 3 * p.alpha * np.diag(u**2) + p.mu * p.D2)
+f = lambda u, t: np.matmul(D2, p.nu * u + p.alpha * u**3 + p.mu * np.matmul(D2, u)) + g(x, t)
+Df = lambda u: np.matmul(D2, p.nu * I + 3 * p.alpha * np.diag(u**2) + p.mu * D2)
 
 # Produce u (initial condition u0) and g_u ([u1,...,uT])
-u0 = _initial_condition(p.x, p.x_max)
-produce_samples(u0, p.nr_realizations, p.x, p.x_points, p.dx, p.t, p.t_points, p.dt, f, Df, p.filename)
+u0 = _initial_condition(x, p.x_max)
+produce_samples(u0, p.nr_realizations, x, p.x_points, p.dx, t, p.t_points, p.dt, f, Df, filename)

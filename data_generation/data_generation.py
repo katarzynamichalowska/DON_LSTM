@@ -26,6 +26,13 @@ def midpoint_method(u,un,t,f,Df,dt,M,tol,max_iter):
     return un
 
 def difference_matrices(P=20, M=100):
+    '''
+    Discrete approximation of the first and second order 
+    spatial derivative operators
+    f = ux^2 + uxx
+    = (d/dx u)^2 + d^2/dx^2 u
+    D1 approximates d/dx, D2 approximates d^2/dx^2
+    '''
     dx = P/M
     e = np.ones(M) # unit vector of length M
     # 1st order central difference matrix:
