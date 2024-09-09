@@ -3,7 +3,7 @@ Benjamin--Bona--Mahony equation.
 """
 import numpy as np
 import os
-from data_generation import grid, sech, solve_bbm, make_trunk
+from data_generation import grid, sech, solve, difference_matrices, make_trunk
 
 
 seed = 0
@@ -24,8 +24,10 @@ dx, dt = x_max/x_points, t_max/t_points
 x, dx = grid(x_max, x_points)
 t, dt = grid(t_max+dt, t_points+1)          # Added dt and 1 to have t_points in g_u
 
+D1, D2 = difference_matrices(x_max, x_points)
+
 def _initial_condition(grid_x):
-    M = len(grid_x)
+    M = x_points
     P = int((grid_x[-1]-grid_x[0])*M/(M-1))
     c1, c2 = np.random.uniform(1, 3, 2) # height
     d1, d2 = np.random.uniform(0, 1, 2) # location
@@ -35,13 +37,20 @@ def _initial_condition(grid_x):
     u0 = np.concatenate([u0[M:], u0[:M]], axis=-1)
     return u0
 
+# Define the equations
+I = np.eye(x_points)
+    
+g = lambda x, t: 0
+f = lambda u, t: np.linalg.solve(I-D2, -np.matmul(D1, u + .5*u**2) + g(x, t))
+Df = lambda u: np.linalg.solve(I-D2, -np.matmul(D1, I + np.diag(u)))
+
 # Produce u (initial condition u0) and g_u ([u1,...,uT])
 u0_list, u_list = list(), list()
 for i in range(nr_realizations):
     if i%100==0:
         print(f"Nr samples: {i}")
     u0 = _initial_condition(x)
-    u = solve_bbm(u0, x, t)
+    u = solve(u0, t, f, Df, dt, x_points)
     u0_list.append(u0)    
     u_list.append(np.array(u)[1:])
     

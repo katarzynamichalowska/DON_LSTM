@@ -4,7 +4,7 @@ Cahn-Hilliard equation.
 
 import os
 import numpy as np
-from data_generation import grid, make_trunk, difference_matrices, midpoint_method
+from data_generation import grid, make_trunk, difference_matrices, solve, midpoint_method
 
 seed = 9
 np.random.seed(seed)
@@ -62,11 +62,8 @@ for i in range(nr_realizations):
     if i%100==0:
         print(f"Nr samples: {i}")
     u0 = _initial_condition(x, x_max)
-    u = np.zeros([t.shape[0], u0.shape[-1]])
-    u[0,:] = u0
 
-    for i, t_step in enumerate(t[:-1]):
-        u[i+1,:] = midpoint_method(u[i,:], u[i,:], t[i], f, Df, dt, x_points, 1e-12, 5)
+    u = solve(u0, t, f, Df, dt, x_points)
     u0_list.append(u0)    
     u_list.append(np.array(u)[1:])
     

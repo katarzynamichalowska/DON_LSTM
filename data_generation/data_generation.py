@@ -114,63 +114,7 @@ def make_trunk(grid_x, grid_t, remove_first_ts=True):
 
     return xt
 
-def solve_kdv(u0, grid_x, grid_t, gamma=1., eta=6.):
-    
-    M, N = len(grid_x), len(grid_t)
-    dx = (grid_x.max()/(M-1))
-    x_max = grid_x.max()+dx
-    dt = (grid_t.max()/(N-1))
-
-    D1, D2 = difference_matrices(x_max, M)
-    g = lambda x, t: 0
-    f = lambda u, t: -np.matmul(D1, .5*eta*u**2 + gamma**2*np.matmul(D2,u)) + g(grid_x, grid_t)
-    Df = lambda u: -np.matmul(D1, eta*np.diag(u) + gamma**2*D2)
-    
-    u = np.zeros([grid_t.shape[0], u0.shape[-1]])
-    u[0, :] = u0
-    for i, t_step in enumerate(grid_t[:-1]):
-        u[i+1,:] = midpoint_method(u[i,:], u[i,:], grid_t[i], f, Df, dt, M, 1e-12, 5)
-        
-    return u
-
-def difference_matrices_fb(P=20, M=100):
-    dx = P/M
-    e = np.ones(M) # unit vector of length M
-    # 1st order forward difference matrix:
-    D1f = 1/dx*spdiags([e,-e,e], np.array([-M+1,0,1]), M, M).toarray()
-    # 1st order backward difference matrix:
-    D1b = 1/dx*spdiags([-e,e,-e], np.array([-1,0,M-1]), M, M).toarray()
-    return D1f, D1b
-
-def solve_bbm(u0, grid_x, grid_t):
-    
-    M, N = len(grid_x), len(grid_t)
-    dx = (grid_x.max()/(M-1))
-    x_max = grid_x.max()+dx
-    dt = (grid_t.max()/(N-1))
-    
-    D1, D2 = difference_matrices(x_max, M)
-    I = np.eye(M)
-    
-    g = lambda x, t: 0
-    f = lambda u, t: np.linalg.solve(I-D2, -np.matmul(D1, u + .5*u**2) + g(grid_x, grid_t))
-    Df = lambda u: np.linalg.solve(I-D2, -np.matmul(D1, I + np.diag(u)))
-    
-    u = np.zeros([grid_t.shape[0], u0.shape[-1]])
-    u[0, :] = u0
-    for i, t_step in enumerate(grid_t[:-1]):
-        u[i+1,:] = midpoint_method(u[i,:], u[i,:], grid_t[i], f, Df, dt, M, 1e-12, 5)
-        
-    return u
-
-def solve(u0, grid_x, grid_t, f, Df):
-    M, N = len(grid_x), len(grid_t)
-    dx = (grid_x.max()/(M-1))
-    x_max = grid_x.max()+dx
-    dt = (grid_t.max()/(N-1))
-    
-    D1, D2 = difference_matrices(x_max, M)
-
+def solve(u0, grid_t, f, Df, dt, M):
     u = np.zeros([grid_t.shape[0], u0.shape[-1]])
     u[0, :] = u0
     for i, t_step in enumerate(grid_t[:-1]):
