@@ -2,68 +2,8 @@ import numpy as np
 from scipy.sparse import spdiags
 import numpy.linalg as la
 
-def make_xt(x_len, t_len, x_2d=False):
-    """
-    Makes a 2D trunk input of the form:
-    x: (x1, x2...xn, x1, x2...xn...xn)
-    t: (t1, t1...t1, t2, t2...t2...tn)
-    """
-    if x_2d:
-        x_len = int(np.sqrt(x_len))
-
-    x = np.array(range(1, x_len+1))
-    t = np.array(range(1, t_len+1))
-
-    if x_2d:
-        x_col1 = np.tile(np.repeat(x, x.shape[0]), t.shape[0])
-        x_col2 = np.tile(np.tile(x, x.shape[0]), t.shape[0])
-        t_col = np.repeat(t, x.shape[0]**2)
-        xt = np.stack([t_col, x_col1, x_col2]).T
-    else:
-        x_col = np.tile(x, t.shape[0])
-        t_col = np.repeat(t, x.shape[0])
-        xt = np.stack([x_col, t_col]).T
-    
-    return xt
-
 def sech(i): 
     return 1/np.cosh(i) 
-
-def solver_schema(dx, M, gamma, eta):
-    """
-    Schema for the solver (or something like that :)))).
-    """
-    a, b, nu = 0., 0., 0.
-    e = np.ones(M)
-    deltacx = .5/dx*spdiags([e,-e,e,-e], np.array([-M+1,-1,1,M-1]), M, M)
-    delta2cx = 1/dx**2*spdiags([e,e,-2*e,e,e], np.array([-M+1,-1,0,1,M-1]), M, M)
-    deltafx = 1/dx*spdiags([e,-e,e], np.array([-M+1,0,1]), M, M)
-    damping = spdiags(a*e, 0, M, M)
-    D1 = deltacx.toarray() # Couldn't get sparse matrix to work
-    D2 = delta2cx.toarray()
-    Dp = deltafx.toarray()
-    A = damping.toarray()
-    f = lambda u: np.matmul(D1-A,.5*eta*u**2 + gamma**2*np.matmul(D2,u)) + nu*np.matmul(D2,u)# + np.sin(u)
-    Df = lambda u: np.matmul(D1-A,eta*np.diag(u) + gamma**2*D2) + nu*D2 # - np.diag(np.cos(u))
-    
-    return f, Df
-
-def random_initial_condition(x_length, x_points, eta=6.):
-    """
-    Produce a random initial condition with two waves.
-    """
-    
-    dx = x_length/x_points # x_res
-    x = np.linspace(0, x_length-dx, x_points) # do not include endpoint, because of periodicity
-    k1, k2 = np.random.uniform(0.5, 2.0, 2)
-    d1 = np.random.uniform(0.2, 0.3, 1)
-    d2 = d1 + np.random.uniform(0.2, 0.5, 1)
-    u0 = 0
-    u0 += (-6./-eta)*2 * k1**2 * sech(k1 * (x-x_length*d1))**2
-    u0 += (-6./-eta)*2 * k2**2 * sech(k2 * (x-x_length*d2))**2
-    u0 = np.concatenate([u0[x_points:], u0[:x_points]], axis=-1)
-    
-    return u0
 
 def midpoint_method(u,un,t,f,Df,dt,M,tol,max_iter):
     '''

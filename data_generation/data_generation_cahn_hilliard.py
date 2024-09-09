@@ -4,7 +4,7 @@ Cahn-Hilliard equation.
 
 import os
 import numpy as np
-from data_generation import grid, make_trunk, difference_matrices, solve, midpoint_method
+from data_generation import grid, make_trunk, difference_matrices, solve
 
 seed = 9
 np.random.seed(seed)
