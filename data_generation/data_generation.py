@@ -62,6 +62,11 @@ def make_trunk(grid_x, grid_t, remove_first_ts=True):
     return xt
 
 def solve(u0, grid_t, f, Df, dt, M):
+    '''
+    Solve equations f and Df with initial condition u0 with the midpoint method.
+    grid_t is the temporal grid. dt is the difference between two consecutive points in grid_t.
+    M is the number of points in the spatial grid.
+    '''
     u = np.zeros([grid_t.shape[0], u0.shape[-1]])
     u[0, :] = u0
     for i, t_step in enumerate(grid_t[:-1]):
@@ -70,6 +75,9 @@ def solve(u0, grid_t, f, Df, dt, M):
     return u    
     
 def produce_samples(u0, realizations, x, x_points, dx, t, t_points, dt, f, Df, filename):
+    '''
+    Produce samples using spatial and temporal grid x and t, and initial conditions u0 and equations f and Df.
+    '''
     u0_list, u_list = list(), list()
     for i in range(realizations):
         if i % 100==0:
@@ -84,6 +92,7 @@ def produce_samples(u0, realizations, x, x_points, dx, t, t_points, dt, f, Df, f
     # Trunk input (x,t)
     xt = make_trunk(grid_x=x, grid_t=t)
 
+    # Log sample descriptions
     print(f"\nData shapes:\n\t u:\t{u.shape}\n\t g_u:\t{g_u.shape}\n\t xt:\t{xt.shape}")
     print(f"\nx_min:\t\t\t{xt[:,0].min()} \nx_max:\t\t\t{xt[:,0].max()} \nx_points:\t\t{x_points}\ndx:\t\t\t{dx} \nt_min:\t\t\t{xt[:,1].min()} \nt_max:\t\t\t{xt[:,1].max()} \nt_points:\t\t{t_points} \ndt:\t\t\t{dt}")
 
