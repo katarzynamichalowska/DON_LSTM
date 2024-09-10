@@ -4,14 +4,17 @@ Benjamin--Bona--Mahony equation.
 import os
 import numpy as np
 from data_generation import sech, produce_samples, grid, difference_matrices
-import params_generate_data as p
+import yaml
 
-np.random.seed(p.seed)
+with open('params_datagen.yml', 'r') as file:
+    p = yaml.safe_load(file)
 
-filename = os.path.join(p.folder, p.filename)
+np.random.seed(p["seed"])
+
+filename = os.path.join(p["folder"], p["filename"])
 
 def _initial_condition(grid_x):
-    M = p.x_points
+    M = p["x_points"]
     P = int((grid_x[-1] - grid_x[0]) * M/(M - 1))
     c1, c2 = np.random.uniform(1, 3, 2) # height
     d1, d2 = np.random.uniform(0, 1, 2) # location
@@ -22,13 +25,15 @@ def _initial_condition(grid_x):
     return u0
 
 # Make spatial and temporal grids
-x, dx = grid(p.x_max, p.x_points)
-t, dt = grid(p.t_max + p.dt, p.t_points + 1)          # Added dt and 1 to have t_points in g_u
+dx, dt = p["x_max"]/p["x_points"], p["t_max"]/p["t_points"]
 
-D1, D2 = difference_matrices(p.x_max, p.x_points)
+x, dx = grid(p["x_max"], p["x_points"])
+t, dt = grid(p["t_max"] + dt, p["t_points"] + 1)          # Added dt and 1 to have t_points in g_u
+
+D1, D2 = difference_matrices(p["x_max"], p["x_points"])
 
 g = lambda x, t: 0
-I = np.eye(p.x_points)
+I = np.eye(p["x_points"])
 
 # Define the equations
 f = lambda u, t: np.linalg.solve(I - D2, -np.matmul(D1, u + .5 * u**2) + g(x, t))
@@ -36,4 +41,4 @@ Df = lambda u: np.linalg.solve(I - D2, -np.matmul(D1, I + np.diag(u)))
 
 # Produce u (initial condition u0) and g_u ([u1,...,uT])
 u0 = _initial_condition(x)
-produce_samples(u0, p.nr_realizations, x, p.x_points, p.dx, t, p.t_points, p.dt, f, Df, filename)
+produce_samples(u0, p["nr_realizations"], x, p["x_points"], dx, t, p["t_points"], dt, f, Df, filename)

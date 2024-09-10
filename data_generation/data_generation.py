@@ -29,7 +29,7 @@ def difference_matrices(P=20, M=100):
     '''
     Discrete approximation of the first and second order 
     spatial derivative operators
-    f = ux^2 + uxx
+    f = u_x^2 + u_xx
     = (d/dx u)^2 + d^2/dx^2 u
     D1 approximates d/dx, D2 approximates d^2/dx^2
     '''

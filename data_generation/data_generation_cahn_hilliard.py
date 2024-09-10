@@ -4,11 +4,14 @@ Cahn-Hilliard equation.
 import os
 import numpy as np
 from data_generation import produce_samples, grid, difference_matrices
-import params_generate_data as p
+import yaml
 
-np.random.seed(p.seed)
+with open('params_datagen.yml', 'r') as file:
+    p = yaml.safe_load(file)
 
-filename = os.path.join(p.folder, p.filename)
+np.random.seed(p["seed"])
+
+filename = os.path.join(p["folder"], p["filename"])
 
 def _initial_condition(grid_x, x_max):
     a0, a1, a2, a3 = np.random.uniform(0, .2, 4)
@@ -20,18 +23,20 @@ def _initial_condition(grid_x, x_max):
     return u0
 
 # Make spatial and temporal grids
-x, dx = grid(p.x_max, p.x_points)
-t, dt = grid(p.t_max + p.dt, p.t_points + 1)          # Added dt and 1 to have t_points in g_u
+dx, dt = p["x_max"]/p["x_points"], p["t_max"]/p["t_points"]
 
-D1, D2 = difference_matrices(p.x_max, p.x_points)
+x, dx = grid(p["x_max"], p["x_points"])
+t, dt = grid(p["t_max"] + dt, p["t_points"] + 1)          # Added dt and 1 to have t_points in g_u
+
+D1, D2 = difference_matrices(p["x_max"], p["x_points"])
 
 g = lambda x, t: 0
-I = np.eye(p.x_points)
+I = np.eye(p["x_points"])
 
 # Define the equations
-f = lambda u, t: np.matmul(D2, p.nu * u + p.alpha * u**3 + p.mu * np.matmul(D2, u)) + g(x, t)
-Df = lambda u: np.matmul(D2, p.nu * I + 3 * p.alpha * np.diag(u**2) + p.mu * D2)
+f = lambda u, t: np.matmul(D2, p["nu"] * u + p["alpha"] * u**3 + p["mu"] * np.matmul(D2, u)) + g(x, t)
+Df = lambda u: np.matmul(D2, p["nu"] * I + 3 * p["alpha"] * np.diag(u**2) + p["mu"] * D2)
 
 # Produce u (initial condition u0) and g_u ([u1,...,uT])
-u0 = _initial_condition(x, p.x_max)
-produce_samples(u0, p.nr_realizations, x, p.x_points, p.dx, t, p.t_points, p.dt, f, Df, filename)
+u0 = _initial_condition(x, p["x_max"])
+produce_samples(u0, p["nr_realizations"], x, p["x_points"], dx, t, p["t_points"], dt, f, Df, filename)
