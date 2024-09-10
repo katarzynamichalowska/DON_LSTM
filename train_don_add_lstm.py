@@ -112,6 +112,7 @@ u, g_u = u[params.I0_SAMPLE:], g_u[params.I0_SAMPLE:]
 if params.NR_SAMPLES is not None:
     u, g_u = u[:params.NR_SAMPLES], g_u[:params.NR_SAMPLES]
 
+# TODO: Remove OPT_LAMBDA_INIT_COND and related parameters. It is a lambda parameter to "optimize based on initial condition". We are not using it 
 if params.OPT_LAMBDA_INIT_COND!=0:
     params.ADD_U0_TO_G_U = True
 
@@ -187,11 +188,14 @@ model_pretrained = load_model(main_folder=dir_models, modelname=params.LOADED_MO
 
 input_layer, output_layer = model_pretrained.input, model_pretrained.output
 
+
+# TODO: Find a more elegant way to add the LSTM layers to the pretrained model.
 x = Reshape((data_p["t_len"],data_p["x_len"]))(output_layer)
 x = add_layers(x=x, hidden_layers=params.RNN_LAYERS, nn_name="lstm", l2_norm=params.L2_NORM)
 x = Dense(data_p["x_len"], activation='linear')(x)
 x = Reshape((data_p["t_len"]*data_p["x_len"],))(x)
 
+# Freezing the pretrained model
 for layer in model_pretrained.layers:
     layer.trainable = False
 
@@ -211,6 +215,7 @@ logs = open(logs_path, 'a')
 
 #-------------------- MODEL TRAINING --------------------#
 
+# TODO: I don't think that the tensorflow board is used... Remove it.
 tb_writer = tf.summary.create_file_writer(os.path.join(output_folder, "tb_logs"))
 history, log_history = train_model(model,
                                    n_epochs=N_EPOCHS_1,

@@ -2,7 +2,7 @@
 File to train DeepONets, LSTMs and DON-LSTMs. 
 Parameters are read from the params.py file.
 """
-
+# TODO: Sys imports are hardcoded.
 import sys
 sys.path.insert(0, './modules')
 import numpy as np
@@ -85,7 +85,7 @@ u, xt, g_u = data['u'], data['xt'], data['g_u']
 
 #-------------------- DATA PREPROCESSING --------------------#
 
-data_p = preprocess_data(u, xt, g_u, resample_i=params.RESAMPLE_I, nr_samples=params.NR_SAMPLES, nr_timesteps=params.NR_TIMESTEPS, train_perc=params.TRAIN_PERC, 
+data_p = preprocess_data(u, xt, g_u, resample_i=params.RESAMPLE_TIME_INTERVAL, nr_samples=params.NR_SAMPLES, nr_timesteps=params.NR_TIMESTEPS, train_perc=params.TRAIN_PERC, 
                          train_idx=params.TRAIN_IDX, val_idx = params.VAL_IDX, test_idx=params.TEST_IDX,
                          u_scaler=params.U_SCALER, xt_scaler=params.XT_SCALER, g_u_scaler=params.G_U_SCALER, batch_xt=bool_batch_trunk,
                          x_2d=params.X_2D, same_scale_in_out=params.SAME_SCALE_IN_OUT, residual=params.RESIDUAL_IN_T,
@@ -101,6 +101,7 @@ logs.write(log_functions.print_scale_info(u_train_proc, u_test_proc, g_u_train_p
 
 #-------------------- DOWNSAMPLE DATA --------------------#
 
+# TODO: Remove the downsampling alltogether.
 if bool_sample_t or bool_sample_x:
     g_u_train_processed, indices_t, indices_x =  downsample_x_t(g_u=g_u_train_processed, 
                                                                   t_len=data_p["t_len"], x_len=data_p["x_len"], 
@@ -111,6 +112,9 @@ if bool_sample_t or bool_sample_x:
 
 
 #-------------------- MODEL DEFINITION --------------------#
+
+# TODO: This has to be thought through actually... Create a "ModelFactory" function?
+# Define an example model of a deeponet and a separate model of an RNN in a separate file?
 
 if not params.START_FROM_LATEST:
 
@@ -161,6 +165,7 @@ if not params.START_FROM_LATEST:
     logs = open(logs_path, 'a')
 
 else:
+    # TODO: Modelpath should not be hardcodes but imported from parameters
     model = load_model("../models", modelname=model, checkpoint=cp_max)
     print("Load the latest model")
 
