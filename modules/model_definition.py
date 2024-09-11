@@ -68,15 +68,6 @@ LAYER_DICT = dict({"dense": Dense,
                   })
 
 
-def sine_activation(x):
-    """
-    Sine activation function.
-    """
-    return K.sin(x)
-
-get_custom_objects().update({'sine': sine_activation})
-
-
 def make_deeponet(branch_network,
                trunk_network,
                rnn_layers=None,
@@ -84,6 +75,8 @@ def make_deeponet(branch_network,
                t_len=600,
                trunk_batch=False,
                l2_norm_in_rnn=None):
+
+
 
     """
     Creates a DeepONet.
@@ -182,7 +175,7 @@ def make_nn(input_layer=None,
     
     layer_1 = list(hidden_layers[0].keys())[0]
     
-    # Define the input layer
+    # TODO: The input shape should be defined at the input. Remove these additional projections (dense linear layers, reshaping, etc.)
     if input_layer is None:
         if layer_1=="conv_1d":
             input_shape = input_shape + (1,)
@@ -218,7 +211,6 @@ def compile_model(model, learning_rate, scheduler=None):
         scheduler_params = dict(initial_learning_rate=learning_rate, first_decay_steps=500, t_mul=2.0, m_mul=1.0, alpha=0.0, name=None)
         learning_rate = tf.keras.optimizers.schedules.CosineDecayRestarts(**scheduler_params)
 
-    # TODO: here add losses to the model
     optimizer = tf.keras.optimizers.Adam(learning_rate=learning_rate)
     loss = tf.keras.losses.MeanSquaredError()
     model.compile(optimizer=optimizer, loss=loss)
@@ -229,8 +221,6 @@ def compile_model(model, learning_rate, scheduler=None):
 def add_layers(x, hidden_layers, nn_name, l2_norm=None):
     
     layers, parameters = zip(*[(list(d.keys())[0], list(d.values())[0]) for d in hidden_layers])
-
-    # TODO: other layers to add l2 norm
 
     if l2_norm is not None:
         [p.update({'kernel_regularizer':l2(l2_norm)}) for l, p in zip(layers, parameters) if (l=="dense") or (l=="conv_2d")]
@@ -253,6 +243,7 @@ def add_layers(x, hidden_layers, nn_name, l2_norm=None):
 
 
 def set_default_parameters(layer, p):
+    # TODO: Remove the default parameters, the parameters should always be set in the parameters file for control
     
     if layer=="dense":
         p.setdefault("units", 128)

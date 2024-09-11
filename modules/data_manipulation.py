@@ -10,6 +10,8 @@ sys.path.insert(0, "../")
 
 
 def update_params_with_default(params):
+    # TODO: Not necessary to have this function once the default parameters are removed
+
     """
     Updates params with default values if missing.
     """
@@ -27,6 +29,8 @@ def read_model_params(modelname, folder="../../models", filename="params.txt"):
         @ data_processing_params: a dictionary of parameters in lowercase to be used as kwargs 
                                   in preprocess_data() and postprocess_data()
     """
+    # TODO: Not necessary to have this function once all parameters are saved and loaded in .yaml
+
 
     params_path = os.path.join(os.path.join(folder, modelname), filename)
     params_read = read_parameters(params_path)
@@ -43,6 +47,7 @@ def preprocess_data_from_params(u, xt, g_u, modelname, folder="../../models", **
     Params:
         @ fixed_params: preprocessing parameters with a fixed value (not from file)
     """
+    # TODO: Not necessary to have this function once all parameters are saved and loaded in .yaml
  
     params_updated, preprocessing_params = read_model_params(modelname, folder=folder)
 
@@ -56,6 +61,7 @@ def append_g_u_by_u(g_u, u):
     """
     Appends u0 to g_u.
     """
+    # TODO: Rename and describe. The functions adds u0 (initial condition) to the output of the network g_u. This means that the timestep 0 is also predicted by the model
     g_u_temp = g_u.reshape(g_u.shape[0], int(g_u.shape[1]/u.shape[1]), u.shape[1])
     u_temp = u.reshape(u.shape[0], 1, u.shape[1])
     g_u = np.concatenate([u_temp, g_u_temp], axis=1)
@@ -107,7 +113,6 @@ def preprocess_data(u, xt, g_u, resample_i=None, nr_timesteps=None, nr_samples=N
         if add_u0_to_gu:
             t_len += 1
 
-    # TODO: make sure that resampled data has the same scaling as regular data (trunk has the same min and max)
 
     if (nr_timesteps is not None) and (nr_timesteps != "None"):
         if nr_timesteps >= t_len:
@@ -134,6 +139,7 @@ def preprocess_data(u, xt, g_u, resample_i=None, nr_timesteps=None, nr_samples=N
             xt_train, xt_test = xt, xt
 
     else:        
+        # TODO: trunk_rnn is not used.
         u_train, g_u_train, u_test, g_u_test, xt_train, xt_test = train_test_split(u=u,
                                                                                 g_u=g_u,
                                                                                 xt=xt,
@@ -164,7 +170,7 @@ def preprocess_data(u, xt, g_u, resample_i=None, nr_timesteps=None, nr_samples=N
             g_u_train_trans, _ = scaling(g_u_train, scaler=u_scaler)
             g_u_test_trans, _ = scaling(g_u_test, scaler=u_scaler)
 
-
+    # TODO: Create separate dictionaries of training and testing data and scalers? 
     return dict({
         'u_train': u_train,
         'u_test': u_test,
