@@ -2,6 +2,9 @@
 Parameters for training DeepONets, LSTMs and DON-LSTMs. These parameters are loaded by train_model.py.
 """
 
+# TODO: Remove any logic from the parameters file. (e.g., if else statements)
+# TODO: Replace the .py parameters files with .yaml files.
+
 MODELNAME = "don_lstm_highres"					# str: name of the model
 N_HIGH_RES = 250						# int: number of high resolution samples
 PROBLEM_NAME = "kdv"						# str: name of the problem
@@ -26,9 +29,12 @@ BATCH_SIZE = 50							# int: batch size
 TRAIN_IDX = (0,N_HIGH_RES)					# tuple(int): start and end indices of the training data
 VAL_IDX = (3000,3250)						# tuple(int): start and end indices of the validation data
 TEST_IDX = (4000,5000)						# tuple(int): start and end indices of the test data
-RESAMPLE_I = None 						# int: resample the data in temporal dimension, by every 'i' time steps
+
+# TODO: Rename to resample_timestep? 
+RESAMPLE_TIME_INTERVAL = None 						# int: resample the data in temporal dimension, by every 'i' time steps
 
 # Training parameters
+# TODO: START_FROM_LATEST is not very intuitive. Replace with an integer to specify the checkpoint to load.
 START_FROM_LATEST = False					# bool: start from the last checkpoint if loading a pre-trained model
 LEARNING_RATE = 0.0001						# float: learning rate used in training
 N_EPOCHS = 25000						# int: number of training epochs
@@ -37,6 +43,7 @@ VAL_PERC = 0.1							# float: the percentage of training data used for validatio
 CHECKPOINTS_FREQ = 1000						# int: the frequency of saving the model's weights during training
 LOG_OUTPUT_FREQ = 100						# int: the frequency of logs
 
+# TODO: In .yaml this would be just a multi-level list.
 BRANCH_HIDDEN_LAYERS = [{'dense': {'units': 150, 'activation': 'swish', 'kernel_initializer': 'glorot_normal'}}, 
 			{'dense': {'units': 250, 'activation': 'swish', 'kernel_initializer': 'glorot_normal'}}, 
 			{'dense': {'units': 450, 'activation': 'swish', 'kernel_initializer': 'glorot_normal'}}, 

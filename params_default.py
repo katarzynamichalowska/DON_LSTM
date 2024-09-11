@@ -3,6 +3,8 @@ Default parameters for training DeepONets, LSTMs and DON-LSTMs.
 This file overwrites the parameters if they are otherwise not specified in params.py or params_don_add_lstm.py.
 """
 
+# TODO: These parameters and their uses should be removed.
+
 MODELNAME = "don_lstm_highres"					# str: name of the model
 N_HIGH_RES = 250						# int: number of high resolution samples
 PROBLEM_NAME = "kdv"						# str: name of the problem

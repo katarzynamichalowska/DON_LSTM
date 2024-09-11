@@ -1,0 +1,20 @@
+seed: 9
+
+nr_realizations: 200
+folder: "./data"
+filename: "data_kdv.npz"
+
+# Grid Parameters
+x_max: 10                                  # The length (width/period) in the spatial domain
+x_points: 100                              # Number of points in the spatial domain
+t_max: 5                                   # Total seconds in g_u
+t_points: 200                              # Number of points in g_u
+
+# Parameters (Cahn-Hilliard):
+nu: -.01
+alpha: .01
+mu: -0.00001
+
+# Parameters (KdV)
+gamma: 1.
+eta: 6.

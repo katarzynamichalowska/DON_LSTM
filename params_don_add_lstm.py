@@ -1,6 +1,8 @@
 """
 Parameters for training DON-LSTM using a pre-trained DeepONet models. These parameters are loaded by train_don_add_lstm.py.
 """
+# TODO: Remove any logic from the parameters file. (e.g., if else statements)
+# TODO: Replace the .py parameters files with .yaml files.
 
 import os
 PROBLEM_NAME = "burgers"
@@ -66,6 +68,7 @@ SCHEDULER = None							# str: learning rate scheduler
 X_2D = False								# bool: True if using 2D-space data
 
 # Loss function parameters
+# TODO: These need a bit of thinking too. They are used in defining the loss function.
 OPT_LAMBDA_INIT_COND = 0.0					# float: 
 OPT_LAMBDA_LAST_TS = 0.0					# float: 
 OPT_LAMBDA_ALL_TS = 0.0						# float: 
@@ -79,6 +82,8 @@ RESIDUAL_IN_T = False						# bool: Transform the output into residuals from the 
 ADD_U0_TO_G_U = True						# bool: Add the initial condition u to the output g_u through concatenation: g_u = u + g_u.
 SAME_SCALE_IN_OUT = False					# bool: Apply the same scaler (u_scaler) to both u and g_u.
 
+
+# TODO: Remove any code related to integral training and hard constraints.
 # Hard constraints parameters 1
 TRAIN_ON_INTEGRALS = False					# bool: ?
 
@@ -90,12 +95,14 @@ UNSCALE_HARD_CONSTR = False					# bool: ?
 
 
 #RNN_LAYERS = None							# list(dict): RNN layers to be added after the einsum layer
+# TODO: In .yaml this would be just a multi-level list.
 RNN_LAYERS = [{'lstm': {'units': 200, 'return_sequences': True, 'activation': 'tanh', 
                         'kernel_initializer': 'glorot_uniform'}}] 
 									
 
 TRAIN_TF = False								# bool: use @tf.function(jit_compile=True) in training
 
+# TODO: Remove the downsampling
 SAMPLING_PERC_T = 1 #0.8 					# float: % of each sample from training data, in time dimension. Each sample has different locations. 
 SAMPLING_PERC_X = 1 #0.8					# float: % of each sample from training data, in time dimension. Each sample has different locations. 
 
@@ -106,7 +113,7 @@ OUTPUT_ACTIVATION = "linear"				# str: activation function of the last layer of 
 
 NOTES = ""									# str: Additional notes to be added to th log file
 
-
+# TODO: Remove the wavelet transform parameters and wavelet transform network functions. Includes splitting the outputs.
 # Wavelet transform parameters
 WT_INPUT = False							# bool: transform the input into wavelets.
 WT_OUTPUT = False							# bool: transform the output into wavelets.
