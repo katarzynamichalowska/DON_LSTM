@@ -4,3 +4,7 @@ models
 data_generation/data
 output
 *.batch
+*.npz
+*.npy
+*.png
+*.pdf
