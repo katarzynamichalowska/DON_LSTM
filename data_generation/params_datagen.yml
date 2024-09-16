@@ -1,8 +1,8 @@
 seed: 9
 
-nr_realizations: 200
-folder: "./data"
-filename: "data_kdv.npz"
+nr_realizations: 1000
+folder: ./data
+filename: data_kdv.npz
 
 # Grid Parameters
 x_max: 10                                  # The length (width/period) in the spatial domain

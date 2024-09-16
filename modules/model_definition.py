@@ -1,4 +1,3 @@
-import sys
 import tensorflow as tf
 from tensorflow.keras.layers import (Input, Dense, Lambda, Conv1D, Flatten, MaxPooling1D, AveragePooling1D,
                                      Conv2D, MaxPooling2D, AveragePooling2D, Reshape, Dropout, Concatenate, 
@@ -6,8 +5,8 @@ from tensorflow.keras.layers import (Input, Dense, Lambda, Conv1D, Flatten, MaxP
 from tensorflow.keras import Model
 from tensorflow.keras.regularizers import l2
 import tensorflow.keras.backend as K
-from keras.utils.generic_utils import get_custom_objects
-#from tensorflow.keras.saving import get_custom_objects
+#from keras.utils.generic_utils import get_custom_objects
+from tensorflow.keras.saving import get_custom_objects
 
 
 def dict_to_layers(hidden_layers):

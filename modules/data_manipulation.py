@@ -1,61 +1,9 @@
 import numpy as np
-import os
-import warnings
-from modules.dir_functions import read_parameters, read_params_module_as_dict
 import sys
 sys.path.insert(0, "../")
 
 
 """--------------------   PROCESSING (GENERAL)   --------------------"""
-
-
-def update_params_with_default(params):
-    # TODO: Not necessary to have this function once the default parameters are removed
-
-    """
-    Updates params with default values if missing.
-    """
-    # Default values for incomplete params.txt
-    default_values = read_params_module_as_dict('params_default')
-
-    # Update dictionary with default values if missing
-    [params.update({key:value}) for key, value in default_values.items() if key not in params]
-    
-    return params
-
-def read_model_params(modelname, folder="../../models", filename="params.txt"):
-    """
-    Returns:
-        @ data_processing_params: a dictionary of parameters in lowercase to be used as kwargs 
-                                  in preprocess_data() and postprocess_data()
-    """
-    # TODO: Not necessary to have this function once all parameters are saved and loaded in .yaml
-
-
-    params_path = os.path.join(os.path.join(folder, modelname), filename)
-    params_read = read_parameters(params_path)
-    params_read = dict([(key.upper(),value) for key, value in params_read.items()]) #Keys to uppercase
-    params_updated = update_params_with_default(params_read)
-    data_processing_params = dict([(k.lower(), v) for k,v in zip(params_updated.keys(), params_updated.values())])
-
-    return params_updated, data_processing_params
-
-def preprocess_data_from_params(u, xt, g_u, modelname, folder="../../models", **fixed_params):
-    """
-    Wrapper for preprocess_data() which reads parameters from logs (params.txt of a given model)
-
-    Params:
-        @ fixed_params: preprocessing parameters with a fixed value (not from file)
-    """
-    # TODO: Not necessary to have this function once all parameters are saved and loaded in .yaml
- 
-    params_updated, preprocessing_params = read_model_params(modelname, folder=folder)
-
-    # Update with fixed_params if needed
-    [preprocessing_params.update({key:value}) for key, value in fixed_params.items()]
-    [params_updated.update({key.upper():value}) for key, value in fixed_params.items()]
-
-    return params_updated, preprocess_data(u, xt, g_u, **preprocessing_params)
 
 def append_g_u_by_u(g_u, u):
     """
@@ -68,6 +16,55 @@ def append_g_u_by_u(g_u, u):
     g_u = g_u.reshape(g_u.shape[0], g_u.shape[1]*g_u.shape[2])
     
     return g_u
+
+def train_test_split(u, g_u, xt=None, train_perc=0.8, batch_xt=False):
+    """
+    Splits u, xt and g_u into training set.
+
+    Params:
+        @ batch_xt: trunk in batches
+
+    if batch_xt:
+        @ u.shape = [bs, x_len]
+        @ xt.shape = [bs, x_len*t_len, 3]
+        @ g_u.shape = [bs, x_len*t_len] 
+    else:
+        @ u.shape = [bs, x_len]
+        @ xt.shape = [x_len*t_len, 2]
+        @ g_u.shape = [bs, x_len*t_len] 
+    """
+    
+    def _split(f, train_size):
+        """
+        Splits f into train and test sets.
+        """
+        if isinstance(f, (list, tuple)):
+            train, test = list(), list()
+            for i, f_i in enumerate(f):
+                train.append(f_i[:train_size])
+                test.append(f_i[train_size:])
+                assert(train[i].shape[-1]==test[i].shape[-1])
+        else:            
+            train, test = f[:train_size], f[train_size:]
+            assert(train.shape[-1]==test.shape[-1])
+
+        return train, test
+
+    if train_perc > 0.0:
+        train_size = int(np.floor(int(u.shape[0])*train_perc))
+
+        u_train, u_test = _split(u, train_size)
+        g_u_train, g_u_test = _split(g_u, train_size)
+
+        if batch_xt:
+            xt_train, xt_test = _split(xt, train_size)
+        else:
+            xt_train, xt_test = xt, xt
+
+        return u_train, g_u_train, u_test, g_u_test, xt_train, xt_test
+    
+    else:
+        return None, None, u, g_u, xt, xt
 
 def preprocess_data(u, xt, g_u, resample_i=None, nr_timesteps=None, nr_samples=None, train_perc=0.8, 
                     u_scaler=None, xt_scaler=None, g_u_scaler=None, 
@@ -85,7 +82,7 @@ def preprocess_data(u, xt, g_u, resample_i=None, nr_timesteps=None, nr_samples=N
     x_len = u.shape[1]
     t_len = int(g_u.shape[1]/x_len)
 
-    if (nr_samples is not None) and (nr_samples != "None"):
+    if nr_samples is not None:
         u, g_u = u[:nr_samples], g_u[:nr_samples]
         if batch_xt:
             xt = xt[:nr_samples]
@@ -106,7 +103,8 @@ def preprocess_data(u, xt, g_u, resample_i=None, nr_timesteps=None, nr_samples=N
         # TODO: not compatible with resampling
         xt = make_xt(x_len, t_len, x_2d=x_2d)
 
-    if (resample_i is not None) and (resample_i != "None"):
+    # resample - skip every resample_i number of timesteps (downsampling)
+    if resample_i is not None:
         g_u, xt = resample_g_xt(g_u, xt, int(resample_i))
         t_len = int(t_len/resample_i)
         print(f"Output resampled by i={resample_i}.")
@@ -114,9 +112,9 @@ def preprocess_data(u, xt, g_u, resample_i=None, nr_timesteps=None, nr_samples=N
             t_len += 1
 
 
-    if (nr_timesteps is not None) and (nr_timesteps != "None"):
+    if nr_timesteps is not None:
         if nr_timesteps >= t_len:
-            raise ValueError(f"nr_timesteps={nr_timesteps} is larger than number of timestesteps in the data ({t_len})")
+            raise ValueError(f"nr_timesteps={nr_timesteps} is larger than number of timesteps in the data ({t_len})")
         g_u = g_u[:, :nr_timesteps*x_len]
         t_len = int(g_u.shape[1]/x_len)
         xt = make_xt(x_len, t_len, x_2d=x_2d)
@@ -144,7 +142,7 @@ def preprocess_data(u, xt, g_u, resample_i=None, nr_timesteps=None, nr_samples=N
                                                                                 g_u=g_u,
                                                                                 xt=xt,
                                                                                 train_perc=train_perc,
-                                                                                batch_xt=trunk_rnn)
+                                                                                )
 
     u_train_trans, xt_train_trans, g_u_train_trans = u_train, xt_train, g_u_train
     u_test_trans, xt_test_trans, g_u_test_trans = u_test, xt_test, g_u_test
@@ -217,68 +215,6 @@ def postprocess_data(f, scaler=None, data_len=50, **kwargs):
         f_post = f_post[0]
     
     return f_post
-
-
-
-def postprocess_g_u_from_params(f, modelname, folder, scaler=None, data_len=50):
-    """
-    Wrapper for preprocess_data() which reads parameters from logs (params.txt of a given model)
-    """
-
-    params, data_processing_params = read_model_params(modelname=modelname, folder=folder)
-
-
-    return params, postprocess_data(f, data_len=data_len, scaler=scaler, **data_processing_params)
-
-
-def train_test_split(u, g_u, xt=None, train_perc=0.8, batch_xt=False):
-    """
-    Splits u, xt and g_u into training set.
-
-    Params:
-        @ batch_xt: trunk in batches
-
-    if batch_xt:
-        @ u.shape = [bs, x_len]
-        @ xt.shape = [bs, x_len*t_len, 3]
-        @ g_u.shape = [bs, x_len*t_len] 
-    else:
-        @ u.shape = [bs, x_len]
-        @ xt.shape = [x_len*t_len, 2]
-        @ g_u.shape = [bs, x_len*t_len] 
-    """
-    
-    def _split(f, train_size):
-        """
-        Splits f into train and test sets.
-        """
-        if isinstance(f, (list, tuple)):
-            train, test = list(), list()
-            for i, f_i in enumerate(f):
-                train.append(f_i[:train_size])
-                test.append(f_i[train_size:])
-                assert(train[i].shape[-1]==test[i].shape[-1])
-        else:            
-            train, test = f[:train_size], f[train_size:]
-            assert(train.shape[-1]==test.shape[-1])
-
-        return train, test
-
-    if train_perc > 0.0:
-        train_size = int(np.floor(int(u.shape[0])*train_perc))
-
-        u_train, u_test = _split(u, train_size)
-        g_u_train, g_u_test = _split(g_u, train_size)
-
-        if batch_xt:
-            xt_train, xt_test = _split(xt, train_size)
-        else:
-            xt_train, xt_test = xt, xt
-
-        return u_train, g_u_train, u_test, g_u_test, xt_train, xt_test
-    
-    else:
-        return None, None, u, g_u, xt, xt
 
 
 """--------------------   SUBSETTING/RESAMPLING   --------------------"""
@@ -538,9 +474,9 @@ def scaling(f, scaler):
 
     scaler_type = scaler if (isinstance(scaler, str) or (scaler is None)) else scaler['scaler']
 
-    if (scaler_type is None) or (scaler_type == "None") or (scaler_type == "none"):
+    if scaler_type is None:
         f_scaled = f
-        scaler_type = "None"
+        scaler_type = None
         scaler_features = dict({})
 
     elif scaler_type == "standard":

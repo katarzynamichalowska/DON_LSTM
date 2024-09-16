@@ -17,21 +17,23 @@ def pprint_layer_dict(layers):
     return layers
 
 
-def print_params(module_name, table=False, header=False):
-    items = dict([(item, getattr(module_name, item))
-                 for item in dir(module_name) if not item.startswith("__")])
+def print_params(params, table=False, header=False):
     string = ""
     if header:
         string += "\n\n#--------------------     PARAMETERS     --------------------#\n\n"
     if table:
-        string += table_dictionary_items(items)
+        string += table_dictionary_items(params)
     else:
-        string += equal_dictionary_items(items)
+        string += equal_dictionary_items(params)
 
     print(string)
 
     return string
 
+def log_params(log_path, params):
+    with open(log_path, 'w') as params_log:
+        params_log.write(print_params(params))
+    params_log.close()
 
 def table_dictionary_items(items):
     string = ""

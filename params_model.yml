@@ -1,0 +1,109 @@
+
+# Parameters for training DeepONets, LSTMs and DON-LSTMs. These parameters are loaded by train_model.py.
+
+MODELNAME: don_lstm_highres             # str: name of the model
+N_HIGH_RES: 1000                        # int: number of high resolution samples
+PROBLEM_NAME: kdv                       # str: name of the problem
+
+# Location of .npz data file
+DATAFILE: data_generation/data/data_kdv.npz
+
+# Model location
+MODEL_FOLDER: multires_models
+
+BATCH_SIZE: 100                          # int: batch size
+TRAIN_IDX: [0, 700]                     # tuple(int): start and end indices of the training data
+VAL_IDX: [700, 900]                     # tuple(int): start and end indices of the validation data
+TEST_IDX: [900, 1000]                   # tuple(int): start and end indices of the test data
+
+# TODO: Rename to resample_timestep? 
+RESAMPLE_TIME_INTERVAL: null            # int: resample the data in temporal dimension, by every 'i' time steps
+
+# Training parameters
+# TODO: START_FROM_LATEST is not very intuitive. Replace with an integer to specify the checkpoint to load.
+START_FROM_CHECKPOINT: 0                # bool: start from the specified checkpoint if loading a pre-trained model, 0 to start from scratch
+LEARNING_RATE: 0.0001                   # float: learning rate used in training
+N_EPOCHS: 100                         # int: number of training epochs
+TRAIN_PERC: 0.9                         # float: the percentage of data used for training
+VAL_PERC: 0.1                           # float: the percentage of training data used for validation
+CHECKPOINTS_FREQ: 10                  # int: the frequency of saving the model's weights during training
+LOG_OUTPUT_FREQ: 100                    # int: the frequency of logs
+
+
+BRANCH_HIDDEN_LAYERS: 
+    - dense: 
+        units: 150 
+        activation: swish
+        kernel_initializer: glorot_normal
+    - dense: 
+        units: 250 
+        activation: swish
+        kernel_initializer: glorot_normal
+    - dense: 
+        units: 450 
+        activation: swish
+        kernel_initializer: glorot_normal
+    - dense: 
+        units: 380 
+        activation: swish
+        kernel_initializer: glorot_normal
+    - dense: 
+        units: 320 
+        activation: swish
+        kernel_initializer: glorot_normal
+
+TRUNK_HIDDEN_LAYERS: 
+    - dense: 
+        units: 200 
+        activation: swish
+        kernel_initializer: glorot_normal
+    - dense: 
+        units: 220 
+        activation: swish
+        kernel_initializer: glorot_normal
+    - dense: 
+        units: 240 
+        activation: swish
+        kernel_initializer: glorot_normal
+    - dense: 
+        units: 250 
+        activation: swish
+        kernel_initializer: glorot_normal
+    - dense: 
+        units: 260 
+        activation: swish
+        kernel_initializer: glorot_normal
+    - dense: 
+        units: 280 
+        activation: swish
+        kernel_initializer: glorot_normal
+
+L2_NORM: 0.009                          # float: L2 regularization
+SCHEDULER: null                         # str: name of the learning rate scheduler
+
+# RNN_LAYERS: Set to null if training a vanilla DeepONet. Specify if training a DON-LSTM.
+# RNN_LAYERS: null                      # list(dict): RNN layers to be added after the einsum layer
+
+RNN_LAYERS: 
+    - lstm:
+        units: 200
+        return_sequences: true
+        activation: tanh
+        kernel_initializer: glorot_uniform
+
+TRAIN_TF: false                         # bool: use @tf.function(jit_compile=True) in training (advised as True when not using the LSTM layer, otherwise False)
+U_SCALER: standard                      # str: the name of the scaler of the branch input / LSTM input
+XT_SCALER: minmax                       # str: the name of the scaler of the trunk input
+G_U_SCALER: standard                    # str: the name of the scaler of the network output
+NR_TIMESTEPS: null                      # int: nr timesteps to which the data should be subset
+NR_SAMPLES: null                        # int: nr samples to which the data should be subset
+
+SAMPLING_PERC_T: 1                      # float: percent of each sample from training data, in time dimension. Each sample has different locations. 
+SAMPLING_PERC_X: 1                      # float: percent of each sample from training data, in time dimension. Each sample has different locations. 
+BT_OUTPUT_SIZE: 300                     # int: number of neurons to be added at the end of the branch and trunk layers (must be equal)
+OUTPUT_ACTIVATION: linear               # str: activation function of the last layer of the branch and trunk networks
+X_2D: false                             # bool: True if using 2D-space data
+OPT_SA_WEIGHTS: true                    # bool: use self-adaptive weights in the loss function
+RESIDUAL_IN_T: false                    # bool: Transform the output into residuals from the initial condition. (or from the previous time step?)
+ADD_U0_TO_G_U: true                     # bool: Add the initial condition u to the output g_u through concatenation: g_u: u + g_u.
+SAME_SCALE_IN_OUT: false                # bool: Apply the same scaler (u_scaler) to both u and g_u.
