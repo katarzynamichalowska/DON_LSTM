@@ -197,7 +197,7 @@ plot_history_all(history, output_folder, plot_name)
 
 print(f"\nWarning: Changing the learning rate from {p['LEARNING_RATE_1']} to {p['LEARNING_RATE_2']}.\n")
 
-cp_max = N_EPOCHS_1
+cp_max = cp_max + N_EPOCHS_1
 
 cp_best = _find_best_cp(model_main_folder=output_folder,
                         X=[data_p['u_test_trans'], data_p['xt_test_trans']], 
