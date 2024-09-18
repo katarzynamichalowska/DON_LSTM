@@ -78,6 +78,9 @@ def preprocess_data(u, xt, g_u, resample_i=None, nr_timesteps=None, nr_samples=N
         - Splits the data into training and testing,
         - Scales the data.
     """
+    u_scaler = u_scaler.casefold()
+    xt_scaler = xt_scaler.casefold()
+    g_u_scaler = g_u_scaler.casefold()
 
     x_len = u.shape[1]
     t_len = int(g_u.shape[1]/x_len)
@@ -137,7 +140,6 @@ def preprocess_data(u, xt, g_u, resample_i=None, nr_timesteps=None, nr_samples=N
             xt_train, xt_test = xt, xt
 
     else:        
-        # TODO: trunk_rnn is not used.
         u_train, g_u_train, u_test, g_u_test, xt_train, xt_test = train_test_split(u=u,
                                                                                 g_u=g_u,
                                                                                 xt=xt,
@@ -219,21 +221,6 @@ def postprocess_data(f, scaler=None, data_len=50, **kwargs):
 
 """--------------------   SUBSETTING/RESAMPLING   --------------------"""
 
-
-def subset_ts(u, xt, g_u, ts):
-    """
-    Subsets the data to the solutions (u.shape[1] spatial points) for a given timestamp.
-    """
-    x_len = u.shape[1]  
-    i0 = ts * x_len
-    i1 = i0 + x_len
-    xt_i = xt[:, i0:i1, :]
-    g_u_i = g_u[:, i0:i1]
-    
-    return u, xt_i, g_u_i
-
-
-
 def resample_g_xt(g_u, xt, i, except_i=False):
     """
     Resamples g_u and xt to a lower resolution.
@@ -245,7 +232,9 @@ def resample_g_xt(g_u, xt, i, except_i=False):
     """
     
     # g_u:
-    g_u_reshaped = reshape_g_u(g_u, xt)
+    g_u_reshaped = g_u.reshape(g_u.shape[0],
+                                             len(np.unique(xt[:, 1])),
+                                             len(np.unique(xt[:, 0])))
     if not except_i:
         g_u_i = g_u_reshaped[:, ::i]
     else:
@@ -267,42 +256,6 @@ def resample_g_xt(g_u, xt, i, except_i=False):
 
     return g_u_sampled, xt_sampled
     
-def subset_indices(arr, sub_perc, axis=1):
-    """
-    Returns an array of indices of shape [bs, sample_size], where sample_size is the length of the array
-    across the specified axis * sub_perc.
-    Example:
-        - arr [bs, x_len, y_len], axis=1: returns [bs, x_len*sub_perc]
-        - arr [bs, x_len, y_len], axis=2: returns [bs, y_len*sub_perc]
-    """
-    s = arr.shape
-    indices = np.tile(np.arange(s[axis]), s[0]).reshape(s[0],s[axis])
-    if sub_perc < 1.0:
-        indices = np.apply_along_axis(np.random.permutation, axis=1, arr=indices)
-        indices = indices[:,:int(np.floor(s[axis]*sub_perc))]
-        indices = np.apply_along_axis(np.sort, axis=1, arr=indices)
-
-    return indices
-
-def subset_array(arr, indices, axis=1):
-    if axis==1:
-        arr = np.array([arr_i[idx_i] for arr_i, idx_i in zip(arr,indices)])
-    elif axis==2:
-        arr = np.array([arr_i[:,idx_i] for arr_i, idx_i in zip(arr,indices)])
-    
-    return arr
-
-def downsample_x_t(g_u, t_len, x_len, sampling_perc_t, sampling_perc_x):
-    g_u = g_u.reshape(g_u.shape[0], t_len, x_len)
-    indices_t = subset_indices(g_u, sampling_perc_t, axis=1)
-    g_u = subset_array(g_u, indices_t, axis=1)
-    indices_x = subset_indices(g_u, sampling_perc_x, axis=2)
-    g_u = subset_array(g_u, indices=indices_x, axis=2)
-    g_u = g_u.reshape(g_u.shape[0], g_u.shape[1]*g_u.shape[2])
-
-    return g_u, indices_t, indices_x
-
-
 """--------------------   TRUNK FUNCTIONS   --------------------"""
 
 def make_xt(x_len, t_len, x_2d=False):
@@ -329,43 +282,6 @@ def make_xt(x_len, t_len, x_2d=False):
     
     return xt
 
-
-def make_xt_from_idx(indices_t, indices_x):
-    """
-    Returns a batched trunk based in provided indices.
-    """
-    
-    assert(indices_t.shape[0]==indices_x.shape[0])
-    
-    xt_full = list()
-    
-    for i in range(indices_t.shape[0]):
-        x, t = indices_x[i], indices_t[i]
-        x_col = np.tile(x, t.shape[0])
-        t_col = np.repeat(t, x.shape[0])
-        xt = np.stack([x_col, t_col]).T
-        xt_full.append(xt)
-    xt_full = np.array(xt_full)
-    
-    return xt_full
-
-
-def update_trunk(xt, g_u_pred):
-    """
-    Replaces the last column in xt with the predicted value.
-    
-    Params:
-        @xt: trunk [bs, x_len*1, 3]
-        @g_u_pred: last predicted value of g_u
-        
-    """
-    xt = xt[:, :, :2]
-    g_u_pred = g_u_pred.reshape(g_u_pred.shape[0], g_u_pred.shape[1], 1)
-    xt = np.concatenate([xt, g_u_pred], axis=2)
-    
-    return xt
-
-
 """--------------------      RESHAPING      --------------------"""
 
 def reshape_3d_2d(g_u):
@@ -384,23 +300,6 @@ def reshape_3d_2d(g_u):
         g_u = _reshape(g_u)
 
     return g_u
-
-
-def reshape_g_u(g_u_output, xt):
-    """
-    Transforms output functions into an array of shape [bs, t_len, x_len]
-    
-    params:
-        @ g_u_output: DeepONet prediction of shape [bs, t_len * x_len]
-        @ xt: trunk input of shape [_,2]
-    """
-
-    g_u_output_reshaped = g_u_output.reshape(g_u_output.shape[0],
-                                             len(np.unique(xt[:, 1])),
-                                             len(np.unique(xt[:, 0])))
-
-    return g_u_output_reshaped
-
 
 """--------------------       SCALING       --------------------"""
 
@@ -482,13 +381,13 @@ def scaling(f, scaler):
     elif scaler_type == "standard":
         f_mean, f_std = (f.mean(), f.std()) if isinstance(
             scaler, str) else (scaler['mean'], scaler['std'])
-        f_scaled = standard_scaler(f, f_mean, f_std)
+        f_scaled = (f - f_mean) / f_std
         scaler_features = dict({"mean": f_mean, "std": f_std})
 
     elif scaler_type == "minmax":
         f_min, f_max = (f.min(), f.max()) if isinstance(
             scaler, str) else (scaler['min'], scaler['max'])
-        f_scaled = minmax_scaler(f, f_min, f_max)
+        f_scaled = (f - f_min) / (f_max - f_min)
         scaler_features = dict({"min": f_min, "max": f_max})
 
     elif scaler_type == "norm":
@@ -510,10 +409,10 @@ def inverse_scaling(z, scaler):
 
     def _inverse_scaling(z, scaler):
         if scaler['scaler'] == "standard":
-            x = standard_scaler_inverse(z, scaler['mean'], scaler['std'])
+            x = (z * scaler['std']) + scaler['mean']
 
         elif scaler['scaler'] == "minmax":
-            x = minmax_scaler_inverse(z, scaler['min'], scaler['max'])
+            x = (z * (scaler['max'] - scaler['min'])) + scaler['max']
 
         elif scaler['scaler'] == "None":
             x = z
@@ -525,31 +424,6 @@ def inverse_scaling(z, scaler):
         x = [_inverse_scaling(z_i, scaler_i) for z_i, scaler_i in zip(z, scaler)]
     else:
         x = _inverse_scaling(z, scaler)
-
-    return x
-
-def standard_scaler(x, mean, std):
-    """
-    Not using StandardScaler because it treats each timestamp as a separate feature.
-    """
-    z = (x - mean) / std
-    return z
-
-
-def standard_scaler_inverse(z, mean, std):
-    x = (z * std) + mean
-
-    return x
-
-
-def minmax_scaler(x, minimum, maximum):
-    z = (x - minimum) / (maximum - minimum)
-
-    return z
-
-
-def minmax_scaler_inverse(z, minimum, maximum):
-    x = (z * (maximum - minimum)) + minimum
 
     return x
 

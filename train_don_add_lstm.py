@@ -11,47 +11,27 @@ import os
 import tensorflow as tf
 from tensorflow.keras import Model
 from modules.training import train_model, eval_in_batches
-from modules.plotting import plot_history_all, plot_rmse_in_time
+from modules.plotting import plot_history_all
 from modules.model_definition import compile_model, add_layers
-from modules.data_manipulation import preprocess_data, postprocess_data, scaling, subset_indices, subset_array, make_xt_from_idx
+from modules.data_manipulation import preprocess_data
 from modules.load_model import load_model
 import modules.log_functions as log_functions
 import modules.dir_functions as dir_functions
 from tensorflow.keras.layers import Dense, Reshape
-from modules.testing import compute_metrics
+from modules.evaluate import evaluate_data
 
 #--------------------     PARAMS FOR TESTING     --------------------#
 
-p, in_testing = dir_functions.load_params('params_don_add_lstm.yml')
+p = dir_functions.load_params('params_don_add_lstm.yml')
 
 DIR_LOAD_MODEL = dir_functions.make_output_dir(p["MODEL_FOLDER"], p["PROBLEM_NAME"], p["N_HIGH_RES"], p["LOADED_MODEL"], True)
 
 cp = p["LOAD_CP"]
 
-if in_testing:
-    N_EPOCHS_1 = 5
-    N_EPOCHS_2 = 5
-    LOG_OUTPUT_FREQ = 1
-    CP_FREQ = 1
-else:
-    N_EPOCHS_1 = p["N_EPOCHS_1"]
-    N_EPOCHS_2 = p["N_EPOCHS_2"]
-    LOG_OUTPUT_FREQ = p["LOG_OUTPUT_FREQ"]
-    CP_FREQ = p["CHECKPOINTS_FREQ"]
-
-# Params
-evaluation_batches = False
-
-bool_sample_t = (p["SAMPLING_PERC_T"] < 1.0) and (p["SAMPLING_PERC_T"] is not None)
-bool_sample_x = (p["SAMPLING_PERC_X"] < 1.0) and (p["SAMPLING_PERC_X"] is not None)
-bool_batch_trunk = True if bool_sample_t or bool_sample_x else False
-if p["TRUNK_RNN"]:
-    bool_batch_trunk = True
-
 #--------------------       PATHS       --------------------#
 
 # Output folder
-output_folder = dir_functions.make_output_dir(p["MODEL_FOLDER"], p["PROBLEM_NAME"], p["N_HIGH_RES"], p["MODELNAME"], p["START_FROM_CHECKPOINT"], is_testing=in_testing)
+output_folder = dir_functions.make_output_dir(p["MODEL_FOLDER"], p["PROBLEM_NAME"], p["N_HIGH_RES"], p["MODELNAME"], p["START_FROM_CHECKPOINT"])
 
 checkpoint_dir = os.path.join(output_folder, "checkpoints")
 
@@ -85,25 +65,11 @@ if p["NR_SAMPLES"] is not None:
 
 data_p = preprocess_data(u, xt, g_u, resample_i=p["RESAMPLE_I"], nr_timesteps=p["NR_TIMESTEPS"], train_perc=p["TRAIN_PERC"],
                          train_idx=p["TRAIN_IDX"], val_idx = p["VAL_IDX"], test_idx=p["TEST_IDX"],
-                         u_scaler=p["U_SCALER"], xt_scaler=p["XT_SCALER"], g_u_scaler=p["G_U_SCALER"], trunk_rnn=p["TRUNK_RNN"], batch_xt=bool_batch_trunk,
+                         u_scaler=p["U_SCALER"], xt_scaler=p["XT_SCALER"], g_u_scaler=p["G_U_SCALER"], batch_xt=p["BATCH_TRUNK"],
                          x_2d=p["X_2D"], same_scale_in_out=p["SAME_SCALE_IN_OUT"], residual=p["RESIDUAL_IN_T"],
                          add_u0_to_gu=p["ADD_U0_TO_G_U"])
 
 logs.write(log_functions.print_scale_info(data_p['u_train_trans'], data_p['u_test_trans'], data_p['g_u_train_trans'], data_p['g_u_test_trans'], data_p['xt_train'], data_p['xt_test']))
-
-#-------------------- DOWNSAMPLE DATA --------------------#
-
-if bool_sample_t or bool_sample_x:
-    data_p['g_u_train_trans'] = data_p['g_u_train_trans'].reshape(data_p['g_u_train_trans'].shape[0], data_p["t_len"], data_p["x_len"])
-    indices_t = subset_indices(data_p['g_u_train_trans'], p["SAMPLING_PERC_T"], axis=1)
-    data_p['g_u_train_trans'] = subset_array(data_p['g_u_train_trans'], indices_t, axis=1)
-    indices_x = subset_indices(data_p['g_u_train_trans'], p["SAMPLING_PERC_X"], axis=2)
-    data_p['g_u_train_trans'] = subset_array(data_p['g_u_train_trans'], indices=indices_x, axis=2)
-    s = data_p['g_u_train_trans'].shape
-    data_p['g_u_train_trans'] = data_p['g_u_train_trans'].reshape(s[0], s[1]*s[2])
-    xt_train = make_xt_from_idx(indices_t, indices_x)
-    data_p['xt_train_trans'], _ = scaling(data_p['xt_train'], data_p['xt_scaler'])
-
 
 #-------------------- MODEL DEFINITION --------------------#
 
@@ -130,7 +96,9 @@ def _find_best_cp(model_main_folder, X, g_u_test, cp_max, cp_freq):
     return cp_best
 
 if not p["START_FROM_CHECKPOINT"]:
+    # Set up new model
     if cp is None:
+        # Get best checkpoint from loaded-in model if checkpoint is not otherwise specified
         cp_max0 = dir_functions.read_max_checkpoint(checkpoint_dir=os.path.join(DIR_LOAD_MODEL, "checkpoints"))
 
         cp = _find_best_cp(model_main_folder=DIR_LOAD_MODEL, 
@@ -158,7 +126,6 @@ if not p["START_FROM_CHECKPOINT"]:
     logs.write(log_functions.print_model_summary(model, "deeponet"))
     print(model.summary())
 
-
     with open(os.path.join(output_folder, "model_structure.json"), "w") as json_file:
         json_file.write(model.to_json())
 
@@ -166,6 +133,7 @@ if not p["START_FROM_CHECKPOINT"]:
     logs = open(logs_path, 'a')
 
 else:
+    # Load existing model from checkpoint cp_max
     model = load_model(output_folder, cp_max)
     model = compile_model(model, learning_rate=p["LEARNING_RATE_1"])
     print(f"Load the model from checkpoint {cp_max}")
@@ -174,9 +142,8 @@ else:
 
 #-------------------- MODEL TRAINING --------------------#
 
-# TODO create wrapper for train model including plot_name and plot_history_all
 history, log_history = train_model(model,
-                                   n_epochs=N_EPOCHS_1,
+                                   n_epochs=p["N_EPOCHS_1"],
                                    batch_size=p["BATCH_SIZE"],
                                    u=data_p['u_train_trans'],
                                    xt=data_p['xt_train_trans'],
@@ -185,10 +152,10 @@ history, log_history = train_model(model,
                                    val_idx = p["VAL_IDX"],
                                    checkpoints_folder=checkpoint_dir,
                                    checkpoints_freq=p["CHECKPOINTS_FREQ"],
-                                   log_output_freq=LOG_OUTPUT_FREQ,
+                                   log_output_freq=p["LOG_OUTPUT_FREQ"],
                                    log_temp_path=training_log_path_0,
                                    last_cp=cp_max,
-                                   batch_xt=bool_batch_trunk,
+                                   batch_xt=p["BATCH_TRUNK"],
                                    sa_weights=p["OPT_SA_WEIGHTS"],
                                    use_tf_function=p["TRAIN_TF"])
 
@@ -197,17 +164,12 @@ plot_history_all(history, output_folder, plot_name)
 
 print(f"\nWarning: Changing the learning rate from {p['LEARNING_RATE_1']} to {p['LEARNING_RATE_2']}.\n")
 
-cp_max = cp_max + N_EPOCHS_1
+cp_max = cp_max + p["N_EPOCHS_1"]
 
 cp_best = _find_best_cp(model_main_folder=output_folder,
                         X=[data_p['u_test_trans'], data_p['xt_test_trans']], 
                         g_u_test=data_p['g_u_test_trans'], 
-                        cp_max=cp_max, cp_freq=CP_FREQ)
-
-if in_testing:
-    cp_max = N_EPOCHS_1
-else:
-    cp_max = cp_best
+                        cp_max=cp_max, cp_freq=p["CHECKPOINTS_FREQ"])
 
 for layer in model.layers:
     layer.trainable = True
@@ -215,7 +177,7 @@ for layer in model.layers:
 model = compile_model(model, learning_rate=p["LEARNING_RATE_2"])
 
 history, log_history = train_model(model,
-                                   n_epochs=N_EPOCHS_2,
+                                   n_epochs=p["N_EPOCHS_2"],
                                    batch_size=p["BATCH_SIZE"],
                                    u=data_p['u_train_trans'],
                                    xt=data_p['xt_train_trans'],
@@ -223,10 +185,10 @@ history, log_history = train_model(model,
                                    val_perc=p["VAL_PERC"],
                                    checkpoints_folder=checkpoint_dir,
                                    checkpoints_freq=p["CHECKPOINTS_FREQ"],
-                                   log_output_freq=LOG_OUTPUT_FREQ,
+                                   log_output_freq=p["LOG_OUTPUT_FREQ"],
                                    log_temp_path=training_log_path_1,
                                    last_cp=cp_max,
-                                   batch_xt=bool_batch_trunk,
+                                   batch_xt=p["BATCH_TRUNK"],
                                    sa_weights=p["OPT_SA_WEIGHTS"],
                                    use_tf_function=p["TRAIN_TF"])
 
@@ -236,27 +198,16 @@ logs.write(log_functions.print_training_history(log_history))
 
 #-------------------- MODEL EVALUATION --------------------#
 
-if bool_batch_trunk:
+if p["BATCH_TRUNK"]:
     _, g_u_pred_train_transformed = eval_in_batches(model, data_p['u_train_trans'], data_p['g_u_train_trans'], data_p['xt_train_trans'], 
-                                                    batch_size=p["BATCH_SIZE"], batch_xt=bool_batch_trunk)
+                                                    batch_size=p["BATCH_SIZE"], batch_xt=p["BATCH_TRUNK"])
     _, g_u_pred_test_transformed = eval_in_batches(model, data_p['u_test_trans'], data_p['g_u_test_trans'], data_p['xt_test_trans'], 
-                                                   batch_size=p["BATCH_SIZE"], batch_xt=bool_batch_trunk)
+                                                   batch_size=p["BATCH_SIZE"], batch_xt=p["BATCH_TRUNK"])
 else:
     g_u_pred_train_transformed = model([data_p['u_train_trans'], data_p['xt_train_trans']])
     g_u_pred_test_transformed = model([data_p['u_test_trans'], data_p['xt_test_trans']])
 
-params_output_processing = dict({'scaler': data_p['g_u_scaler'], 'data_len': data_p['x_len']})
-
-outputs = postprocess_data([data_p['g_u_train_trans'], g_u_pred_train_transformed, data_p['g_u_test_trans'], g_u_pred_test_transformed], **params_output_processing)
-
-metrics_train = compute_metrics(outputs[0], outputs[1])
-metrics_test = compute_metrics(outputs[2], outputs[3])
-
-logs.write(log_functions.print_testing(metrics_train=metrics_train, metrics_test=metrics_test))
-
-log_functions.log_params(params_log_path, p)
-
-plot_rmse_in_time(g_u=outputs[2], g_u_pred=outputs[3].numpy(), t_len=data_p['t_len'], output_folder=output_folder, plot_name="mse_in_time")
+evaluate_data(logs, output_folder, data_p['g_u_scaler'], data_p['x_len'], data_p['t_len'], data_p['g_u_train_trans'], g_u_pred_train_transformed, data_p['g_u_test_trans'], g_u_pred_test_transformed)
 
 logs.write(log_functions.print_time("Program finished"))
 logs.close()
