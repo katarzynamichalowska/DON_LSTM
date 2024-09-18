@@ -17,7 +17,7 @@ def train_model(model, n_epochs, batch_size, u, g_u, xt=None, val_perc=None, val
     """
     train_loss_epoch, val_loss_epoch = np.array([], dtype=np.float16), np.array([], dtype=np.float16)
     checkpoint_path = os.path.join(checkpoints_folder, "cp-{epoch:04d}.ckpt")
-    log_temp = open(log_temp_path, 'w')
+    log_temp = open(log_temp_path, 'a')
 
     if (val_perc is not None) and (val_idx is None):
         u, g_u, u_val, g_u_val, xt, xt_val = train_test_split(
