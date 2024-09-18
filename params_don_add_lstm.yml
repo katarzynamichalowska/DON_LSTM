@@ -19,7 +19,7 @@ TEST_IDX: [900, 1000]                       # tuple(int): start and end indices 
 
 # Training parameters
 START_FROM_CHECKPOINT: 0                    # bool: 
-TRUNK_RNN: False                            # bool:
+BATCH_TRUNK: false                            # bool:
 LEARNING_RATE_1: 0.0001                     # float: 
 LEARNING_RATE_2: 0.00001                    # float: 
 N_EPOCHS_1: 10                            # int: 
@@ -32,7 +32,7 @@ LOAD_CP: null                               # int: checkpoint to load from loade
 
 
 # Data parameters
-U_SCALER: standard                          # str:
+U_SCALER: standard                          # str: scalers can be standard, minmax, norm, or null
 XT_SCALER: minmax                           # str:
 G_U_SCALER: standard                        # str:
 RESAMPLE_I: null                            # int:
@@ -67,12 +67,7 @@ RNN_LAYERS:
         activation: tanh
         kernel_initializer: glorot_uniform
 
-TRAIN_TF: false                             # bool: use @tf.function(jit_compile=True) in training
-
-# TODO: Remove the downsampling
-SAMPLING_PERC_T: 1 #0.8                     # float: % of each sample from training data, in time dimension. Each sample has different locations. 
-SAMPLING_PERC_X: 1 #0.8                     # float: % of each sample from training data, in time dimension. Each sample has different locations. 
-
+TRAIN_TF: true                              # bool: use @tf.function(jit_compile=True) in training
 
 BT_OUTPUT_SIZE: 300                         # int: number of neurons to be added at the end of the branch and trunk layers (must be equal)
 OUTPUT_ACTIVATION: linear                   # str: activation function of the last layer of the branch and trunk networks
