@@ -3,7 +3,6 @@ from testing import compute_metrics
 from log_functions import print_testing
 from plotting import plot_rmse_in_time
 
-
 def evaluate_data(log, output_folder, g_u_scaler, x_len, t_len, g_u_train, g_u_pred_train, g_u_test, g_u_pred_test):
     outputs = postprocess_data([g_u_train, g_u_pred_train, g_u_test, g_u_pred_test], scaler=g_u_scaler, data_len=x_len)
 

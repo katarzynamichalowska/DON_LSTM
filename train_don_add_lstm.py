@@ -11,7 +11,7 @@ import os
 import tensorflow as tf
 from tensorflow.keras import Model
 from modules.training import train_model, eval_in_batches
-from modules.plotting import plot_history_all
+from modules.plotting import plot_history_all, plot_full_history
 from modules.model_definition import compile_model, add_layers
 from modules.data_manipulation import preprocess_data
 from modules.load_model import load_model
@@ -209,6 +209,8 @@ else:
     g_u_pred_test_transformed = model([data_p['u_test_trans'], data_p['xt_test_trans']])
 
 evaluate_data(logs, output_folder, data_p['g_u_scaler'], data_p['x_len'], data_p['t_len'], data_p['g_u_train_trans'], g_u_pred_train_transformed, data_p['g_u_test_trans'], g_u_pred_test_transformed)
+plot_full_history(output_folder, training_log_path_0, plot_name="full_training_history_0")
+plot_full_history(output_folder, training_log_path_1, plot_name="full_training_history_1")
 
 logs.write(log_functions.print_time("Program finished"))
 logs.close()

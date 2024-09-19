@@ -8,7 +8,7 @@ sys.path.insert(0, './modules')
 import numpy as np
 import os
 from modules.training import train_model, eval_in_batches
-from modules.plotting import plot_history_all
+from modules.plotting import plot_history_all, plot_full_history
 from modules.model_definition import make_deeponet, make_nn, compile_model, make_modified_rnn
 from modules.data_manipulation import preprocess_data
 from modules.load_model import load_model
@@ -153,6 +153,7 @@ else:
         g_u_pred_test_proc = model([data_p['u_test_trans'], data_p['xt_test_trans']])
 
 evaluate_data(logs, output_folder, data_p['g_u_scaler'], data_p['x_len'], data_p['t_len'], data_p['g_u_train_trans'], g_u_pred_train_proc, data_p['g_u_test_trans'], g_u_pred_test_proc)
+plot_full_history(output_folder, training_log_path, plot_name="full_training_history")
 
 logs.write(log_functions.print_time("Program finished"))
 logs.close()

@@ -160,7 +160,7 @@ def plot_rmse_in_time(g_u, g_u_pred, t_len, output_folder, plot_name,
                       ylabel="RMSE = $\sqrt{(y-\hat{y})^2}$"):
     shape = (g_u.shape[0], t_len, int(g_u.shape[1]/t_len))
     g_u, g_u_pred = g_u.reshape(shape), g_u_pred.reshape(shape)
-    mse_by_ts = np.mean(np.mean(np.sqrt((g_u_pred-g_u)**2), axis=2), axis=0)
+    mse_by_ts = np.mean(np.mean(np.sqrt((g_u_pred-g_u)**2), axis=2), axis=0)        # squares it and then square roots it back again?
     plt.figure(figsize=(10, 5))
     plt.plot(mse_by_ts)
     plt.xlabel("Timesteps")
@@ -225,3 +225,16 @@ def plot_solution(y, y_pred, num_list, epoch, int_start=1, delta_plot_idx=50, sa
     else:
         plt.savefig(os.path.join(savefolder, f"{savename}.png"))
     plt.close()
+
+def plot_full_history(output_folder, training_log_path, plot_name="full_training_history"):
+    train_loss_epoch, val_loss_epoch = np.array([], dtype=np.float16), np.array([], dtype=np.float16)
+
+    with open(training_log_path) as f:
+        for ln in f.readlines():
+            ln = ln.split()
+            train_loss_epoch = np.append(train_loss_epoch, float(ln[5])).astype("float16")
+            val_loss_epoch = np.append(val_loss_epoch, float(ln[7])).astype("float16")
+
+    history = dict({'train_loss': train_loss_epoch, 'val_loss': val_loss_epoch})
+    plot_name = "full_training_history"
+    plot_history_all(history, output_folder, plot_name)
