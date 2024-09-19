@@ -132,7 +132,7 @@ history, log_history = train_model(model,
                                    sa_weights=p["OPT_SA_WEIGHTS"],
                                    use_tf_function=p["TRAIN_TF"])
 
-
+# TODO save training history from previous training sessions to plot
 plot_name = "training_history"
 plot_history_all(history, output_folder, plot_name)
 logs.write(log_functions.print_training_history(log_history))

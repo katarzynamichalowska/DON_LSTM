@@ -45,7 +45,7 @@ training_log_path_1 = os.path.join(output_folder, "training_log_1.out")
 # Write params to param log
 log_functions.log_params(params_log_path, p)
 
-logs = open(logs_path, 'w')
+logs = open(logs_path, 'a')
 logs.write(log_functions.print_time("Program started"))
 logs.write(f"\nTraining extended model on {p['LOADED_MODEL']}\n")
 logs.write(log_functions.print_params(p, table=True, header=True))
@@ -161,6 +161,7 @@ history, log_history = train_model(model,
 
 plot_name = "training_history"
 plot_history_all(history, output_folder, plot_name)
+logs.write(log_functions.print_training_history(log_history))
 
 print(f"\nWarning: Changing the learning rate from {p['LEARNING_RATE_1']} to {p['LEARNING_RATE_2']}.\n")
 
