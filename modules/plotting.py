@@ -156,13 +156,13 @@ def plot_history_all(history, output_folder, plot_name):
 
 
 # TODO: change this to plot differently
-def plot_rmse_in_time(g_u, g_u_pred, t_len, output_folder, plot_name,
-                      ylabel="RMSE = $\sqrt{(y-\hat{y})^2}$"):
+def plot_rse_in_time(g_u, g_u_pred, t_len, output_folder, plot_name,
+                      ylabel="Relative $L_2$ Error"):
     shape = (g_u.shape[0], t_len, int(g_u.shape[1]/t_len))
     g_u, g_u_pred = g_u.reshape(shape), g_u_pred.reshape(shape)
-    mse_by_ts = np.mean(np.mean(np.sqrt((g_u_pred-g_u)**2), axis=2), axis=0)        # squares it and then square roots it back again?
+    rse_by_ts = np.mean(np.mean(((g_u-g_u_pred))**2, axis=2), axis=0) / np.mean(np.mean(((g_u-g_u.mean())**2), axis=2), axis=0)
     plt.figure(figsize=(10, 5))
-    plt.plot(mse_by_ts)
+    plt.plot(rse_by_ts)
     plt.xlabel("Timesteps")
     plt.ylabel(ylabel)
     plt.title("Prediction error in time")
