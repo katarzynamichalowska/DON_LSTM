@@ -91,7 +91,7 @@ Test results are output in a folder specified by the **TEST_FOLDER** setting. A 
 * **MODEL_FOLDER**: The folder to store the data. 
 * **MODELNAME**: The name of the model. 
 
-The model being trained will be stored in a folder `{MODEL_FOLDER}/{PROBLEM_NAME}_{N_HIGH_RES}_samples/{MODELNAME}`.
+The model being trained/tested will be stored in a folder `{MODEL_FOLDER}/{PROBLEM_NAME}_{N_HIGH_RES}_samples/{MODELNAME}`.
 
 * **BATCH_SIZE**: The size of each batch to train on.
 * **TRAIN_IDX**: The range of indices for the training data. 
