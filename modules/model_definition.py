@@ -225,11 +225,9 @@ def add_layers(x, hidden_layers, nn_name, l2_norm=None):
         [p.update({'kernel_regularizer':l2(l2_norm)}) for l, p in zip(layers, parameters) if (l=="dense") or (l=="conv_2d")]
     
     for i, (layer_str, p) in enumerate(zip(layers, parameters)):
-        
-        p = set_default_parameters(layer_str, p)
-        
         layer_name = f"{nn_name}_layer{i+1}"
         
+        # set layer to a function from LAYER_DICT
         layer = LAYER_DICT[layer_str]
         
         if (layer_str=="hybridpool_1d") or (layer_str=="hybridpool_2d"):
@@ -237,34 +235,4 @@ def add_layers(x, hidden_layers, nn_name, l2_norm=None):
         else:
             x = layer(name=layer_name, **p)(x)            
 
-    
     return x
-
-
-def set_default_parameters(layer, p):
-    # TODO: Remove the default parameters, the parameters should always be set in the parameters file for control
-    
-    if layer=="dense":
-        p.setdefault("units", 128)
-        p.setdefault("activation", "linear") #set to "linear" to be able to add a custom activation function afterwards
-        
-    elif layer=="conv_1d":
-        p.setdefault("filters", 32)
-        p.setdefault("kernel_size", 2)
-        p.setdefault("strides", 1)
-        p.setdefault("activation", "relu")
-        
-    elif (layer=="maxpool_1d") or (layer=="avgpool_1d") or (layer=="hybridpool_2d"):
-        p.setdefault("pool_size", 2)
-        
-    elif layer=="conv_2d":
-        p.setdefault("filters", 32)
-        p.setdefault("kernel_size", (2,2))
-        p.setdefault("strides", (1,1))
-        p.setdefault("activation", "relu")
-        
-    elif (layer=="maxpool_2d") or (layer=="avgpool_2d") or (layer=="hybridpool_2d"):
-        p.setdefault("pool_size", (2,2))
-        
-    return p
-
