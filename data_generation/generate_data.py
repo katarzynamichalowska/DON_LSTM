@@ -13,7 +13,7 @@ with open('params_datagen.yml', 'r') as file:
 
 np.random.seed(p["seed"])
 
-filename = os.path.join(p["folder"], p["filename"])
+filename = os.path.join(p["folder"], f"{p['filename']}.npz")
 
 parser = ArgumentParser()
 
