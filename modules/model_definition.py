@@ -1,4 +1,3 @@
-import sys
 import tensorflow as tf
 from tensorflow.keras.layers import (Input, Dense, Lambda, Conv1D, Flatten, MaxPooling1D, AveragePooling1D,
                                      Conv2D, MaxPooling2D, AveragePooling2D, Reshape, Dropout, Concatenate, 
@@ -6,8 +5,8 @@ from tensorflow.keras.layers import (Input, Dense, Lambda, Conv1D, Flatten, MaxP
 from tensorflow.keras import Model
 from tensorflow.keras.regularizers import l2
 import tensorflow.keras.backend as K
-from keras.utils.generic_utils import get_custom_objects
-#from tensorflow.keras.saving import get_custom_objects
+#from keras.utils.generic_utils import get_custom_objects
+from tensorflow.keras.saving import get_custom_objects
 
 
 def dict_to_layers(hidden_layers):
@@ -68,15 +67,6 @@ LAYER_DICT = dict({"dense": Dense,
                   })
 
 
-def sine_activation(x):
-    """
-    Sine activation function.
-    """
-    return K.sin(x)
-
-get_custom_objects().update({'sine': sine_activation})
-
-
 def make_deeponet(branch_network,
                trunk_network,
                rnn_layers=None,
@@ -84,6 +74,8 @@ def make_deeponet(branch_network,
                t_len=600,
                trunk_batch=False,
                l2_norm_in_rnn=None):
+
+
 
     """
     Creates a DeepONet.
@@ -182,7 +174,7 @@ def make_nn(input_layer=None,
     
     layer_1 = list(hidden_layers[0].keys())[0]
     
-    # Define the input layer
+    # TODO: The input shape should be defined at the input. Remove these additional projections (dense linear layers, reshaping, etc.)
     if input_layer is None:
         if layer_1=="conv_1d":
             input_shape = input_shape + (1,)
@@ -218,7 +210,6 @@ def compile_model(model, learning_rate, scheduler=None):
         scheduler_params = dict(initial_learning_rate=learning_rate, first_decay_steps=500, t_mul=2.0, m_mul=1.0, alpha=0.0, name=None)
         learning_rate = tf.keras.optimizers.schedules.CosineDecayRestarts(**scheduler_params)
 
-    # TODO: here add losses to the model
     optimizer = tf.keras.optimizers.Adam(learning_rate=learning_rate)
     loss = tf.keras.losses.MeanSquaredError()
     model.compile(optimizer=optimizer, loss=loss)
@@ -230,17 +221,13 @@ def add_layers(x, hidden_layers, nn_name, l2_norm=None):
     
     layers, parameters = zip(*[(list(d.keys())[0], list(d.values())[0]) for d in hidden_layers])
 
-    # TODO: other layers to add l2 norm
-
     if l2_norm is not None:
         [p.update({'kernel_regularizer':l2(l2_norm)}) for l, p in zip(layers, parameters) if (l=="dense") or (l=="conv_2d")]
     
     for i, (layer_str, p) in enumerate(zip(layers, parameters)):
-        
-        p = set_default_parameters(layer_str, p)
-        
         layer_name = f"{nn_name}_layer{i+1}"
         
+        # set layer to a function from LAYER_DICT
         layer = LAYER_DICT[layer_str]
         
         if (layer_str=="hybridpool_1d") or (layer_str=="hybridpool_2d"):
@@ -248,33 +235,4 @@ def add_layers(x, hidden_layers, nn_name, l2_norm=None):
         else:
             x = layer(name=layer_name, **p)(x)            
 
-    
     return x
-
-
-def set_default_parameters(layer, p):
-    
-    if layer=="dense":
-        p.setdefault("units", 128)
-        p.setdefault("activation", "linear") #set to "linear" to be able to add a custom activation function afterwards
-        
-    elif layer=="conv_1d":
-        p.setdefault("filters", 32)
-        p.setdefault("kernel_size", 2)
-        p.setdefault("strides", 1)
-        p.setdefault("activation", "relu")
-        
-    elif (layer=="maxpool_1d") or (layer=="avgpool_1d") or (layer=="hybridpool_2d"):
-        p.setdefault("pool_size", 2)
-        
-    elif layer=="conv_2d":
-        p.setdefault("filters", 32)
-        p.setdefault("kernel_size", (2,2))
-        p.setdefault("strides", (1,1))
-        p.setdefault("activation", "relu")
-        
-    elif (layer=="maxpool_2d") or (layer=="avgpool_2d") or (layer=="hybridpool_2d"):
-        p.setdefault("pool_size", (2,2))
-        
-    return p
-

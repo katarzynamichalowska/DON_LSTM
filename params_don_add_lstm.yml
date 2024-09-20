@@ -1,0 +1,76 @@
+
+#Parameters for training DON-LSTM using a pre-trained DeepONet models. These parameters are loaded by train_don_add_lstm.py.
+
+PROBLEM_NAME: kdv
+N_HIGH_RES: 1000
+LOADED_MODEL: don_lstm_highres_240913_14575824
+
+MODELNAME: don_added_lstm_1
+# Location of .npz data file
+DATAFILE: data_generation/data/data_kdv.npz
+
+# Model location
+MODEL_FOLDER: multires_models
+
+BATCH_SIZE: 10                              # int:
+TRAIN_IDX: [0, 700]                         # tuple(int): start and end indices of the training data
+VAL_IDX: [700, 900]
+TEST_IDX: [900, 1000]                       # tuple(int): start and end indices of the test data
+
+# Training parameters
+START_FROM_CHECKPOINT: 0                    # bool: 
+BATCH_TRUNK: false                            # bool:
+LEARNING_RATE_1: 0.0001                     # float: 
+LEARNING_RATE_2: 0.00001                    # float: 
+N_EPOCHS_1: 10                            # int: 
+N_EPOCHS_2: 10                            # int: 
+TRAIN_PERC: 0.9                             # float: 
+VAL_PERC: 0.1                               # float:
+CHECKPOINTS_FREQ: 5                      # int: 
+LOG_OUTPUT_FREQ: 5                        # int:
+LOAD_CP: null                               # int: checkpoint to load from loaded model, or null if should use the lowest validation error
+
+
+# Data parameters
+U_SCALER: standard                          # str: scalers can be standard, minmax, norm, or null
+XT_SCALER: minmax                           # str:
+G_U_SCALER: standard                        # str:
+RESAMPLE_I: null                            # int:
+NR_TIMESTEPS: null                          # int:
+NR_SAMPLES: null                            # int:
+I0_SAMPLE: 0
+
+
+
+L2_NORM: 0.009                              # float: L2 regularization
+SCHEDULER: null                             # str: learning rate scheduler
+# SCHEDULER: cosine_decay_restarts
+
+X_2D: false                                 # bool: True if using 2D-space data
+
+# Loss function parameters
+# TODO: These need a bit of thinking too. They are used in defining the loss function.
+OPT_INT_EVAL_POINTS: null                   # list(int): evaluation points for the integral loss. Each integer corresponds to a time step. 
+OPT_SA_WEIGHTS: true                        # bool: use self-adaptive weights in the loss function
+
+
+RESIDUAL_IN_T: false                        # bool: Transform the output into residuals from the initial condition. (or from the previous time step?)
+ADD_U0_TO_G_U: true                         # bool: Add the initial condition u to the output g_u through concatenation: g_u: u + g_u.
+SAME_SCALE_IN_OUT: false                    # bool: Apply the same scaler (u_scaler) to both u and g_u.
+
+# RNN_LAYERS: null                          # list(dict): RNN layers to be added after the einsum layer
+
+RNN_LAYERS: 
+    - lstm:
+        units: 200
+        return_sequences: true
+        activation: tanh
+        kernel_initializer: glorot_uniform
+
+TRAIN_TF: true                              # bool: use @tf.function(jit_compile=True) in training
+
+BT_OUTPUT_SIZE: 300                         # int: number of neurons to be added at the end of the branch and trunk layers (must be equal)
+OUTPUT_ACTIVATION: linear                   # str: activation function of the last layer of the branch and trunk networks
+
+
+NOTES: ""                                   # str: Additional notes to be added to the log file

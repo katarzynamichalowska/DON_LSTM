@@ -1,26 +1,27 @@
 import os
-import numpy as np
-import pandas as pd
 from datetime import datetime
-import params_default
+import yaml
+import numpy as np
+
+def load_params(file):
+    with open(file, 'r') as file:
+        p = yaml.safe_load(file)
+    return p
 
 
-def make_output_dir(params, is_testing=False):
+def make_output_dir(folder, problem_name, n_high_res, modelname, start_from_checkpoint):
     """
-    Makes an output folder for the model.
+    Finds or makes an output folder for the model.
     """
-    
-    if is_testing:
-        output_folder = os.path.join(os.path.dirname(params.OUTPUT_FOLDER), "TEST")
-    else:
-        output_folder = params.OUTPUT_FOLDER + "_" + timestamp_now()
+    sample_folder = "{}_{}_samples".format(problem_name, n_high_res)
+    fname = os.path.join(folder, sample_folder, modelname)
+
+    output_folder = fname
 
     if not os.path.exists(output_folder):
         os.makedirs(output_folder)
-    elif is_testing:
-        os.makedirs(output_folder, exist_ok=True)
     else:
-        if not params.START_FROM_LATEST:
+        if not start_from_checkpoint:
             output_folder = output_folder + "_copy"
             os.makedirs(output_folder, exist_ok=True)
 
@@ -76,39 +77,13 @@ def correct_dtype(val):
 
     return val
 
-def read_params_module_as_dict(module_name):
-    """
-    Reads all parameters from a module as a dictionary.
-    """
-    module = globals().get(module_name, None)
-    if module:
-        parameters = {key: value for key, value in module.__dict__.items() if not (key.startswith('__') or key.startswith('_'))}
-    return parameters
-
-
-def read_parameters(params_path):
-    """
-    Reads parameters to a dictionary from a params.txt file.
-    """
-    d = {}
-    with open(params_path) as f:
-        for line in f:
-            keyval = line.split(" = ")
-            key = keyval[0]
-            val = keyval[1:]
-            val = " = ".join(val)
-            val = val.strip("\n")
-            val = correct_dtype(val)
-            d[key] = val
-    return d
-
 def _is_float(element):
     try:
         float(element)
         return True
     except ValueError:
         return False
-
+    
 def _parameter_from_logs(modelname, param, folder="../models", logfile="log.out"):
     """
     Read a parameter from the logs of a model.
@@ -136,10 +111,7 @@ def read_model_params(params_to_read, modelname, folder="../models", logfile="lo
             try:
                 params_vals.append(_parameter_from_logs(modelname=modelname, param=p.lower(), folder=folder, logfile=logfile))
             except:
-                try:
-                    params_vals.append(getattr(params_default, p.upper()))
-                except:
-                    print(f"Couldn't find {p} for model {modelname}.")
+                print(f"Couldn't find {p} for model {modelname}.")
 
     return params_vals
 

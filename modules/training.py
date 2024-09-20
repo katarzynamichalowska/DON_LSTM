@@ -5,11 +5,10 @@ import tensorflow as tf
 from timeit import default_timer
 from modules.data_manipulation import train_test_split
 
-
 def train_model(model, n_epochs, batch_size, u, g_u, xt=None, val_perc=None, val_idx=None, checkpoints_folder="checkpoints",
                 checkpoints_freq=1000, log_output=True, log_output_freq=100, log_temp_path="training_log.out", last_cp=0, 
                 batch_xt=False, 
-                sa_weights=True, shuffle=False, use_tf_function=True, use_batch_remainder=False, tb_writer=None):
+                sa_weights=True, shuffle=False, use_tf_function=True, use_batch_remainder=False):
     """
     Shapes:
         @ u:   [bs, x_len]
@@ -18,9 +17,7 @@ def train_model(model, n_epochs, batch_size, u, g_u, xt=None, val_perc=None, val
     """
     train_loss_epoch, val_loss_epoch = np.array([], dtype=np.float16), np.array([], dtype=np.float16)
     checkpoint_path = os.path.join(checkpoints_folder, "cp-{epoch:04d}.ckpt")
-    log_temp = open(log_temp_path, 'w')
-
-    dirname = os.path.dirname(checkpoints_folder)
+    log_temp = open(log_temp_path, 'a')
 
     if (val_perc is not None) and (val_idx is None):
         u, g_u, u_val, g_u_val, xt, xt_val = train_test_split(
@@ -47,6 +44,9 @@ def train_model(model, n_epochs, batch_size, u, g_u, xt=None, val_perc=None, val
     if xt is not None:
         xt = tf.cast(xt, tf.float32)
 
+    if log_output:
+            log_string = ""
+            
     for i in range(last_cp, last_cp+n_epochs):
 
         t1 = default_timer()
@@ -76,10 +76,6 @@ def train_model(model, n_epochs, batch_size, u, g_u, xt=None, val_perc=None, val
         train_loss_minibatch /= n_batches
 
         train_loss_epoch = np.append(train_loss_epoch, train_loss_minibatch).astype("float16")
-        if tb_writer is not None:
-            with tb_writer.as_default():
-                tf.summary.scalar('train_loss', train_loss_minibatch, step=i)
-
 
         if val_perc is not None:
             val_loss_minibatch, val_pred = eval_in_batches(
@@ -89,9 +85,6 @@ def train_model(model, n_epochs, batch_size, u, g_u, xt=None, val_perc=None, val
         else:
             val_loss_epoch = np.append(val_loss_epoch, 0)
 
-        if tb_writer is not None:
-            with tb_writer.as_default():
-                tf.summary.scalar('val_loss', val_loss_minibatch, step=i)
 
         t2 = default_timer()
 
@@ -138,7 +131,7 @@ def grad_predict_sa_weights(model, X, g_u_i):
         y_pred = model(X)
         model.loss_weights.assign(model.loss_weights/tf.reduce_mean(model.loss_weights))
         train_loss_i = weighted_mse_loss(g_u_i, y_pred, model.loss_weights)
-
+    
     gradients = tape.gradient(train_loss_i, model.trainable_variables)
     model.optimizer.apply_gradients(zip(gradients, model.trainable_variables)) 
     model.loss_optimizer.apply_gradients(zip([-tape.gradient(train_loss_i, model.loss_weights)], [model.loss_weights]))

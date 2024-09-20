@@ -1,0 +1,43 @@
+
+# Parameters for training DeepONets, LSTMs and DON-LSTMs. These parameters are loaded by train_model.py.
+
+MODELNAME: don_lstm_highres_240913_14575824             # str: name of the model
+N_HIGH_RES: 1000                        # int: number of high resolution samples
+PROBLEM_NAME: kdv                       # str: name of the problem
+
+# Location of .npz data file
+DATAFILE: data_generation/data/data_kdv.npz
+
+# Model location
+MODEL_FOLDER: multires_models
+
+TEST_FOLDER: test_results
+CHECKPOINT_TO_TEST: 1710                # bool: start from the specified checkpoint if loading a pre-trained model, 0 to start from scratch
+SAMPLES_TO_ANIMATE: [0, 20, 50]
+
+BATCH_SIZE: 100                          # int: batch size
+TRAIN_IDX: [0, 700]                     # tuple(int): start and end indices of the training data
+VAL_IDX: [700, 900]                     # tuple(int): start and end indices of the validation data
+TEST_IDX: [900, 1000]                   # tuple(int): start and end indices of the test data
+
+# TODO: Rename to resample_timestep? 
+RESAMPLE_TIME_INTERVAL: null            # int: resample the data in temporal dimension, by every 'i' time steps
+
+# Training parameters
+LEARNING_RATE: 0.0001                   # float: learning rate used in training
+TRAIN_PERC: 0.9                         # float: the percentage of data used for training
+
+BATCH_TRUNK: false   
+
+SCHEDULER: null                         # str: name of the learning rate scheduler
+
+U_SCALER: standard                      # str: the name of the scaler of the branch input / LSTM input. scalers can be standard, minmax, norm, or null
+XT_SCALER: minmax                       # str: the name of the scaler of the trunk input
+G_U_SCALER: standard                    # str: the name of the scaler of the network output
+NR_TIMESTEPS: null                      # int: nr timesteps to which the data should be subset
+NR_SAMPLES: null                        # int: nr samples to which the data should be subset
+
+X_2D: false                             # bool: True if using 2D-space data
+RESIDUAL_IN_T: false                    # bool: Transform the output into residuals from the initial condition. (or from the previous time step?)
+ADD_U0_TO_G_U: true                     # bool: Add the initial condition u to the output g_u through concatenation: g_u: u + g_u.
+SAME_SCALE_IN_OUT: false                # bool: Apply the same scaler (u_scaler) to both u and g_u.

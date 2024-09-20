@@ -1,11 +1,6 @@
-import os
-import sys
 import numpy as np
 import pandas as pd
 import tensorflow as tf
-from modules.data_manipulation import (scale_data, scaling, inverse_scaling, reshape_g_u, preprocess_data,
-                                       preprocess_data_from_params, postprocess_data, subset_ts, update_trunk)
-from modules.load_model import load_model
 from pprint import pprint
 
 
@@ -26,8 +21,6 @@ def predict_in_batches(model, u, xt, batch_size, trunk_rnn=False):
     predictions = np.array(pred_list)
 
     return predictions
-
-
 
 #--------------------          Evaluation metrics          --------------------#
 
