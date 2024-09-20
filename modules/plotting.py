@@ -249,5 +249,4 @@ def plot_full_history(output_folder, training_log_path, plot_name="full_training
                 break
 
     history = dict({'train_loss': train_loss_epoch, 'val_loss': val_loss_epoch})
-    plot_name = "full_training_history"
     plot_history_all(history, output_folder, plot_name)
