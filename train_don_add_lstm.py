@@ -166,9 +166,7 @@ logs.write(log_functions.print_training_history(log_history))
 
 print(f"\nWarning: Changing the learning rate from {p['LEARNING_RATE_1']} to {p['LEARNING_RATE_2']}.\n")
 
-cp_max = cp_max + p["N_EPOCHS_1"]
-
-cp_best = _find_best_cp(model_main_folder=output_folder,
+cp_max = _find_best_cp(model_main_folder=output_folder,
                         X=[data_p['u_test_trans'], data_p['xt_test_trans']], 
                         g_u_test=data_p['g_u_test_trans'], 
                         cp_max=cp_max, cp_freq=p["CHECKPOINTS_FREQ"])
