@@ -226,14 +226,27 @@ def plot_solution(y, y_pred, num_list, epoch, int_start=1, delta_plot_idx=50, sa
         plt.savefig(os.path.join(savefolder, f"{savename}.png"))
     plt.close()
 
-def plot_full_history(output_folder, training_log_path, plot_name="full_training_history"):
+def plot_full_history(output_folder, training_log_path, plot_name="full_training_history", checkpoint=None):
+    '''
+    Plots the history of the errors from a training log from training_log_path. Plots are put in output_folder.
+    On default, plots all the checkpoints present in the log, otherwise, only plots up to specified checkpoint.
+    '''
     train_loss_epoch, val_loss_epoch = np.array([], dtype=np.float16), np.array([], dtype=np.float16)
+
+    # so that it doesn't check checkpoint if it is None every loop
+    if checkpoint is not None:
+        cp = checkpoint
+    else:
+        cp = -1
 
     with open(training_log_path) as f:
         for ln in f.readlines():
             ln = ln.split()
             train_loss_epoch = np.append(train_loss_epoch, float(ln[5])).astype("float16")
             val_loss_epoch = np.append(val_loss_epoch, float(ln[7])).astype("float16")
+            epoch = int(ln[1])
+            if epoch == cp:
+                break
 
     history = dict({'train_loss': train_loss_epoch, 'val_loss': val_loss_epoch})
     plot_name = "full_training_history"
