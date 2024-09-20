@@ -106,6 +106,7 @@ if not p["START_FROM_CHECKPOINT"]:
                                 g_u_test=data_p['g_u_test_trans'], 
                                 cp_max=cp_max0, cp_freq=p["CHECKPOINTS_FREQ"])
 
+    print(f"Load model {p['LOADED_MODEL']} at checkpoint {cp}")
     model_pretrained = load_model(main_folder=DIR_LOAD_MODEL, checkpoint=cp)
     input_layer, output_layer = model_pretrained.input, model_pretrained.output
 
