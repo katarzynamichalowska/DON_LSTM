@@ -12,10 +12,9 @@ Training parameters can be specified in the params_fno.py file.
 
 import sys
 import os
-import argparse
 sys.path.insert(0, './modules')
 sys.path.insert(0, './modules/fno')
-from modules.plotting import plot_history
+from modules.plotting import plot_history_all, plot_full_history
 from modules.data_manipulation import resample_g_xt
 from modules.fno.data_manipulation import preprocess_data
 from modules.fno.utilities3 import UnitGaussianNormalizer, LpLoss, count_params
@@ -23,12 +22,12 @@ from modules.fno.fno_operations import FNO2d, FNO3d, FNO2d_RNN, FNO2d_LSTM, FNO2
 from modules.fno.Adam import Adam
 import modules.log_functions as log_functions
 import modules.dir_functions as dir_functions
+from modules.load_model_torch import load_fno_model
 
 import numpy as np
 import torch
 import torch.nn.functional as F
 from timeit import default_timer
-import params_fno as params
 import torch.nn as nn
 
 # Seed
@@ -36,35 +35,14 @@ import torch.nn as nn
 #np.random.seed(0)
 os.environ["CUDA_VISIBLE_DEVICES"] = "8" 
 
-time_first=True
-
-# Load model and continue training
-MODEL_TO_LOAD = None
-
 #--------------------     PARAMS FOR TESTING     --------------------#
 
-parser = argparse.ArgumentParser()
-parser.add_argument('-t', '--test', required=False, action="store_true",
-                    help="Run only 2 epochs and print the losses; save to a test folder.")
-parser.add_argument('-m', '--model', required=False,
-                    help="Read a model and continue training from the last epoch.")
-args = parser.parse_args()
-in_testing, model = args.test, args.model
-
-if in_testing:
-    N_EPOCHS = 3
-    LOG_OUTPUT_FREQ = 1
-    CHECKPOINTS_FREQ = 2
-else:
-    N_EPOCHS = params.N_EPOCHS
-    LOG_OUTPUT_FREQ = params.LOG_OUTPUT_FREQ
-    CHECKPOINTS_FREQ = params.CHECKPOINTS_FREQ
-
+p = dir_functions.load_params('params_fno.yml')
 
 #--------------------       PATHS       --------------------#
 
 # Output folder
-output_folder = dir_functions.make_output_dir(params, is_testing=in_testing)
+output_folder = dir_functions.make_output_dir(p["MODEL_FOLDER"], p["PROBLEM_NAME"], p["N_HIGH_RES"], p["MODELNAME"], p["START_FROM_CHECKPOINT"])
 
 # Directories
 checkpoint_dir = os.path.join(output_folder, "checkpoints")
@@ -77,47 +55,45 @@ if not os.path.exists(checkpoint_dir):
     os.makedirs(checkpoint_dir)
 
 with open(params_log_path, 'w') as params_log:
-    params_log.write(log_functions.print_params(params))
+    params_log.write(log_functions.print_params(p))
 params_log.close()
 
-logs = open(logs_path, 'w')
+logs = open(logs_path, 'a')
 logs.write(log_functions.print_time("Program started"))
-logs.write(log_functions.print_params(params))
+logs.write(log_functions.print_params(p))
 
-PATH_MODEL = os.path.join(output_folder, "fourier2d")
-CHECKPOINT_PATH = os.path.join(checkpoint_dir, "cp-{epoch:04d}.ckpt")
-CUDA = True
+PATH_MODEL = os.path.join(output_folder, p["MODELNAME"])
 t1 = default_timer()
 
 #--------------------     LOAD DATA     --------------------#
 
-data = np.load(params.DATAFILE)
+data = np.load(p["DATAFILE"])
 u, xt, g_u = data['u'], data['xt'], data['g_u']
 
 #-------------------- DATA PREPROCESSING --------------------#
 
 
-if params.RESAMPLE_I is not None:
-    g_u, xt = resample_g_xt(g_u, xt, params.RESAMPLE_I)
+if p["RESAMPLE_I"] is not None:
+    g_u, xt = resample_g_xt(g_u, xt, p["RESAMPLE_I"])
 T_IN = 1
 S = u.shape[1]
 t_len = int(g_u.shape[1]/S)
 
-if params.RESAMPLE_I is not None:
-    T = int(t_len/params.RESAMPLE_I)
+if p["RESAMPLE_I"] is not None:
+    T = int(t_len/p["RESAMPLE_I"])
 else:
     T = t_len
 
 data_p = preprocess_data(u, g_u, S, T, T_IN, 
-                         train_idx=params.TRAIN_IDX, val_idx=params.VAL_IDX, test_idx=params.TEST_IDX,
-                         train_perc=params.TRAIN_PERC, val_perc=params.VAL_PERC, 
-                         nr_timestamps=params.NR_TIMESTAMPS, input_3d=params.INPUT_3D)
+                         train_idx=p["TRAIN_IDX"], val_idx=p["VAL_IDX"], test_idx=p["TEST_IDX"],
+                         train_perc=p["TRAIN_PERC"], val_perc=p["VAL_PERC"], 
+                         nr_timestamps=p["NR_TIMESTAMPS"], input_3d=p["INPUT_3D"])
 
 
 #u_normalizer, g_u_normalizer = data_p['u_normalizer'], data_p['g_u_normalizer']
 
 # Data loaders
-train_loader, val_loader, test_loader = data_loaders(data=data_p, batch_size=params.BATCH_SIZE, normalized=False, shuffle_train=False)
+train_loader, val_loader, test_loader = data_loaders(data=data_p, batch_size=p["BATCH_SIZE"], normalized=False, shuffle_train=False)
 
 t2 = default_timer()
 print('Preprocessing finished, time used:', t2-t1)
@@ -126,26 +102,26 @@ print('Preprocessing finished, time used:', t2-t1)
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-if MODEL_TO_LOAD is None:
-    if params.RNN_LAYER is None:
-        if params.INPUT_3D:
-            model = FNO3d(params.MODES, params.MODES, params.MODES, params.WIDTH)
+if not p["START_FROM_CHECKPOINT"]:
+    if p["RNN_LAYER"] is None:
+        if p["INPUT_3D"]:
+            model = FNO3d(p["MODES"], p["MODES"], p["MODES"], p["WIDTH"])
         else:
-            model = FNO2d(params.MODES, params.MODES, params.WIDTH)
+            model = FNO2d(p["MODES"], p["MODES"], p["WIDTH"])
     else:
-        if params.INPUT_3D:
-            model = FNO3d_RNN(params.MODES, params.MODES, params.MODES, params.WIDTH, t_len, S)
+        if p["INPUT_3D"]:
+            model = FNO3d_RNN(p["MODES"], p["MODES"], p["MODES"], p["WIDTH"], t_len, S)
         else:
-            if params.LSTM:
-                model = FNO2d_LSTM(params.MODES, params.MODES, params.WIDTH, t_len, S)
-            elif params.GRU:
-                model = FNO2d_GRU(params.MODES, params.MODES, params.WIDTH, t_len, S)
+            if p["LSTM"]:
+                model = FNO2d_LSTM(p["MODES"], p["MODES"], p["WIDTH"], t_len, S)
+            elif p["GRU"]:
+                model = FNO2d_GRU(p["MODES"], p["MODES"], p["WIDTH"], t_len, S)
             else:
-                model = FNO2d_RNN(params.MODES, params.MODES, params.WIDTH, t_len, S)
+                model = FNO2d_RNN(p["MODES"], p["MODES"], p["WIDTH"], t_len, S)
 else:
-    model = torch.load(MODEL_TO_LOAD)
+    model = load_fno_model(output_folder, cp=p["START_FROM_CHECKPOINT"])
 
-if CUDA:
+if p["CUDA"]:
     #model = nn.DataParallel(model) 
 
     model = model.cuda()
@@ -154,7 +130,7 @@ else:
     model = model.float()
 
 
-if params.INPUT_3D:
+if p["INPUT_3D"]:
     input_size = data_p['u_train'].shape[1:]
 else:
     input_size = data_p['u_train'].shape[1:]
@@ -169,39 +145,38 @@ logs = open(logs_path, 'a')
 
 #--------------------       TRAIN       --------------------#
 
-optimizer = Adam(model.parameters(), lr=params.LEARNING_RATE, weight_decay=1e-4)
+optimizer = Adam(model.parameters(), lr=p["LEARNING_RATE"], weight_decay=1e-4)
 
 
-scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=params.STEP_SIZE, gamma=params.GAMMA)
+scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=p["STEP_SIZE"], gamma=p["GAMMA"])
 #myloss = LpLoss(size_average=False)
 
 
 history, log_history = train_model(model, 
                                     train_loader=train_loader, 
                                     val_loader=val_loader, 
-                                    n_epochs=N_EPOCHS, 
+                                    n_epochs=p["N_EPOCHS"], 
                                     optimizer=optimizer, 
                                     scheduler=scheduler, 
                                     checkpoints_folder=checkpoint_dir,
-                                    checkpoints_freq=CHECKPOINTS_FREQ, 
-                                    log_output_freq=LOG_OUTPUT_FREQ, 
+                                    checkpoints_freq=p["CHECKPOINTS_FREQ"], 
+                                    log_output_freq=p["LOG_OUTPUT_FREQ"], 
                                     log_temp_path=training_log_path, 
-                                    last_cp=0, cuda=True)
+                                    last_cp=0, cuda=p["CUDA"])
 
 torch.save(model, PATH_MODEL)
 
-
-plot_history(history, logy=False, savedir=os.path.join(output_folder, "training_history.png"))
-plot_history(history, logy=True, savedir=os.path.join(output_folder, "training_history_log.png"))
-plot_history(history, logy=False, plot_train=False, savedir=os.path.join(output_folder, "training_history_val.png"))
-plot_history(history, logy=True, plot_train=False, savedir=os.path.join(output_folder, "training_history_val_log.png"))
-
+plot_name = "training_history"
+plot_history_all(history, output_folder, plot_name)
 logs.write(log_functions.print_training_history(log_history))
 
+#-------------------- MODEL EVALUATION --------------------#
 
-mse_test, _, _ = evaluate_model(model, data_loader=test_loader, inverse_norm=False, g_u_normalizer=None, cuda=CUDA)
+mse_test, y_pred_all, y_all = evaluate_model(model, data_loader=test_loader, inverse_norm=False, g_u_normalizer=None, cuda=p["CUDA"])
 
 logs.write("RMSE test (normal scale): {}\n".format(np.round(np.sqrt(mse_test),5)))
+
+plot_full_history(output_folder, training_log_path, plot_name="full_training_history")
 
 logs.write(log_functions.print_time("Program finished"))
 logs.close()

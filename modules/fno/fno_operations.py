@@ -34,7 +34,7 @@ def train_model(model, train_loader, val_loader, n_epochs, optimizer, scheduler,
     
     train_loss, val_loss = list(), list()
     checkpoint_path = os.path.join(checkpoints_folder, "cp-{epoch:04d}.ckpt")
-    log_temp = open(log_temp_path, 'w')
+    log_temp = open(log_temp_path, 'a')
 
     if log_output:
         log_string = ""

@@ -1,4 +1,6 @@
-tensorflow==2.9
+torch
+torchvision
+torchaudio
 keras==2.9
 numpy==1.23.*
 pandas==1.4.*
@@ -6,4 +8,3 @@ seaborn
 matplotlib==3.5.3
 scipy
 pyyaml
-argparse
