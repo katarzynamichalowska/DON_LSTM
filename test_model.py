@@ -1,4 +1,4 @@
-import animation as a
+import modules.animation as a
 import numpy as np
 import os
 from modules.evaluate import evaluate_data
