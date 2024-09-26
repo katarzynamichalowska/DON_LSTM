@@ -28,7 +28,6 @@ output_folder = dir_functions.make_output_dir(p["MODEL_FOLDER"], p["PROBLEM_NAME
 checkpoint_dir = os.path.join(output_folder, "checkpoints")
 
 # Log names
-cp_max = p["START_FROM_CHECKPOINT"]
 logs_path = os.path.join(output_folder, "log.out")
 params_log_path = os.path.join(output_folder, "params.txt")
 training_log_path = os.path.join(output_folder, "training_log.out")
@@ -109,9 +108,9 @@ if not p["START_FROM_CHECKPOINT"]:
 
 else:
     # Load existing model from checkpoint cp_max
-    model = load_model(output_folder, cp_max)
+    model = load_model(output_folder, p["START_FROM_CHECKPOINT"])
     model = compile_model(model, learning_rate=p["LEARNING_RATE"], scheduler=p["SCHEDULER"])
-    print(f"Load the model from checkpoint {cp_max}")
+    print(f"Load the model from checkpoint {p['START_FROM_CHECKPOINT']}")
 
 #-------------------- MODEL TRAINING --------------------#
 
@@ -127,7 +126,7 @@ history, log_history = train_model(model,
                                    checkpoints_freq=p["CHECKPOINTS_FREQ"],
                                    log_output_freq=p["LOG_OUTPUT_FREQ"],
                                    log_temp_path=training_log_path,
-                                   last_cp=cp_max,
+                                   last_cp=p["START_FROM_CHECKPOINT"],
                                    batch_xt=p["BATCH_TRUNK"],
                                    sa_weights=p["OPT_SA_WEIGHTS"],
                                    use_tf_function=p["TRAIN_TF"])
