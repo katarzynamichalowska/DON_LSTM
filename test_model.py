@@ -1,11 +1,12 @@
-import animation as a
+import modules.animation as a
 import numpy as np
 import os
+from modules.evaluate import evaluate_data
 from modules.training import eval_in_batches
 from modules.model_definition import compile_model
-from modules.data_manipulation import preprocess_data, postprocess_data
+from modules.data_manipulation import preprocess_data
 from modules.load_model import load_model
-from modules.plotting import plot_full_history, plot_rse_in_time
+from modules.plotting import plot_full_history
 import modules.dir_functions as dir_functions
 
 p = dir_functions.load_params('params_test.yml')
@@ -55,13 +56,10 @@ else:
         g_u_pred_train_proc = model([data_p['u_train_trans'], data_p['xt_train_trans']])
         g_u_pred_test_proc = model([data_p['u_test_trans'], data_p['xt_test_trans']])
 
-outputs = postprocess_data([data_p['g_u_train_trans'], g_u_pred_train_proc, data_p['g_u_test_trans'], g_u_pred_test_proc], scaler=data_p['g_u_scaler'], data_len=data_p['x_len'])
-
-g_u = outputs[2]
-g_u_pred = outputs[3].numpy()
-
 # Plot errors between g_u and predicted g_u by the model
-plot_rse_in_time(g_u=g_u, g_u_pred=g_u_pred, t_len=data_p['t_len'], output_folder=test_folder, plot_name="rmse_in_time")
+with open(os.path.join(test_folder, "stats.txt"), 'w') as f:
+    g_u, g_u_pred = evaluate_data(f, test_folder, data_p['g_u_scaler'], data_p['x_len'], data_p['t_len'], data_p['g_u_train_trans'], g_u_pred_train_proc, data_p['g_u_test_trans'], g_u_pred_test_proc)
+
 plot_full_history(test_folder, os.path.join(output_folder, "training_log.out"), plot_name="full_training_history", checkpoint=cp_max)
 
 shape = (g_u.shape[0], data_p['t_len'], int(g_u.shape[1]/data_p['t_len']))

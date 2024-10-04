@@ -1,0 +1,35 @@
+# Paths and names
+MODELNAME: fno_lstm2
+DATAFILE: data_generation/data/data_kdv.npz
+MODEL_FOLDER: multires_models
+N_HIGH_RES: 1000                        # int: number of high resolution samples
+PROBLEM_NAME: kdv                       # str: name of the problem
+TEST_FOLDER: test_results
+
+CHECKPOINT_TO_TEST: 500                # bool: start from the specified checkpoint if loading a pre-trained model, 0 to start from scratch
+LEARNING_RATE: 0.001                                # Type: float
+N_EPOCHS: 500                                      # Type: int
+BATCH_SIZE: 100                                      # Type: int, datasize%batch==0
+TRAIN_PERC: 0.9                                     # Type: float
+TRAIN_IDX: [0, 700]                                 # Type: tuple
+VAL_PERC: 0.1                                      # Type: float
+VAL_IDX: [700, 900]                               # Type: tuple
+TEST_IDX: [900, 1000]                              # Type: tuple
+CHECKPOINTS_FREQ: 10                               # Type: int
+LOG_OUTPUT_FREQ: 10
+RESAMPLE_I: null                                    # Type: int
+RNN_LAYER: 200                                      # Type: int (nr neurons)
+NR_TIMESTAMPS: null                                # Type: int or None
+INPUT_3D: false                                    # Type: bool
+LSTM: true
+GRU: false
+
+CUDA: true
+
+# FNO params
+MODES: 8                                          # Type: int
+WIDTH: 64                                         # Type: int
+
+# Scheduler parameters
+STEP_SIZE: 100                                    # Type: int
+GAMMA: 0.5                                        # Type: float
