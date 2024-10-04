@@ -135,7 +135,7 @@ The indices must not exceed the number of samples in the data. Make sure that th
 
 If you use DON_LSTM in an academic paper, please cite as:
 
-```bash
+```
 @inproceedings{michalowska2024neural,
   title={Neural operator learning for long-time integration in dynamical systems with recurrent neural networks},
   author={Micha{\l}owska, Katarzyna and Goswami, Somdatta and Karniadakis, George Em and Riemer-S{\o}rensen, Signe},
