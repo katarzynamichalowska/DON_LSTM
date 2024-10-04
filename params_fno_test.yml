@@ -4,8 +4,9 @@ DATAFILE: data_generation/data/data_kdv.npz
 MODEL_FOLDER: multires_models
 N_HIGH_RES: 1000                        # int: number of high resolution samples
 PROBLEM_NAME: kdv                       # str: name of the problem
+TEST_FOLDER: test_results
 
-START_FROM_CHECKPOINT: 0                # bool: start from the specified checkpoint if loading a pre-trained model, 0 to start from scratch
+CHECKPOINT_TO_TEST: 500                # bool: start from the specified checkpoint if loading a pre-trained model, 0 to start from scratch
 LEARNING_RATE: 0.001                                # Type: float
 N_EPOCHS: 500                                      # Type: int
 BATCH_SIZE: 100                                      # Type: int, datasize%batch==0

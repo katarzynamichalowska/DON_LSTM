@@ -11,8 +11,16 @@ This repository contains scripts that allows for the generation of samples based
 
 The software has been developed with and tested for Python 3.11.
 
+The training of the DeepONets use Tensorflow, so use the following command to install the dependencies:
+
 ```shell
-pip install -r requirements.txt
+pip install -r requirements-tf.txt
+```
+
+The training of the Fourier Neural Operators use PyTorch, so use the following command to install the dependencies:
+
+```shell
+pip install -r requirements-pytorch.txt
 ```
 
 ## Data Generation
@@ -70,7 +78,17 @@ python train_don_add_lstm.py
 
 This script is configured through the file `params_don_add_lstm.yml`. The model is outputed in a similar way to the previous script.
 
-To use this, load a previously trained model using the **LOADED_MODEL** setting. Be sure that **MODEL_FOLDER**, **PROBLEM_NAME**, and **N_HIGH_RES** are the same from when the loaded model was being trained. **LOAD_CP** chooses which checkpoint of the loaded, pre-trained model to start from. If `null`, then the program will automatically choose the best checkpoint to use using the lowest validation error.
+To use this, load a previously trained model using the **LOADED_MODEL** setting. Make sure that **MODEL_FOLDER**, **PROBLEM_NAME**, and **N_HIGH_RES** are the same values as when the loaded model was being trained. **LOAD_CP** chooses which checkpoint of the loaded, pre-trained model to start from. If `null`, then the program will automatically choose the best checkpoint to use using the lowest validation error.
+
+### Training of Fourier Neural Operators
+
+A FNO model can be trained by doing
+
+```shell
+python train_fno.py
+```
+
+This script is configured through the file `params_fno.yml`. The settings should be similar to the other configuration files.
 
 ### Model Testing
 
@@ -80,7 +98,15 @@ A model can be tested by running:
 python test_model.py
 ```
 
-This script is configured through the file `params_test.yml`.
+This is configured through the file `params_test.yml`.
+
+A FNO model can be tested by running:
+
+```shell
+python test_fno.py
+```
+
+This is configured through the file `params_fno_test.yml`.
 
 Test results are output in a folder specified by the **TEST_FOLDER** setting. A checkpoint can be chosen from the model by the **CHECKPOINT_TO_TEST** setting. The outputs include training history plots, a text file `stats.txt` that outputs the MAE, RMSE, and RSE errors when the model is being tested on the training and testing data. An animation with both the real solution and the predicted solution by the model can be created by denoting which samples to animate in the array for the **SAMPLES_TO_ANIMATE** setting.
 
@@ -98,9 +124,31 @@ The model being trained/tested will be stored in a folder `{MODEL_FOLDER}/{PROBL
 * **VAL_IDX**: The range of indices for the validation data. 
 * **TEST_IDX**: The range of indices for the testing data. 
 
-The indices must not exceed the number of samples in the data. It is recommended that the testing data not overlap with the training or validation data.
+The indices must not exceed the number of samples in the data. Make sure that the testing data not overlap with the training or validation data.
 
 * **START_FROM_CHECKPOINT**: If the model already exists, the program can start from an existing checkpoint to continue to train from. The checkpoint must exist in the model's checkpoint folder. If the value is 0, it will create a new model from scratch.
 * **N_EPOCHS**: The total number of epochs to train the model for. 
 * **CHECKPOINTS_FREQ**: Save a checkpoint after every specified interval of epochs. 
 * **LOG_OUTPUT_FREQ**: Log results after every specified interval of epochs. 
+
+## Citing
+
+If you use DON_LSTM in an academic paper, please cite as:
+
+```bash
+@inproceedings{michalowska2024neural,
+  title={Neural operator learning for long-time integration in dynamical systems with recurrent neural networks},
+  author={Micha{\l}owska, Katarzyna and Goswami, Somdatta and Karniadakis, George Em and Riemer-S{\o}rensen, Signe},
+  booktitle={2024 International Joint Conference on Neural Networks (IJCNN)},
+  pages={1--8},
+  year={2024},
+  organization={IEEE}
+}
+
+@article{michalowska2023donlstm,
+  title={DON-LSTM: Multi-Resolution Learning with DeepONets and Long Short-Term Memory Neural Networks},
+  author={Micha{\l}owska, Katarzyna and Goswami, Somdatta and Karniadakis, George Em and Riemer-S{\o}rensen, Signe},
+  journal={arXiv preprint arXiv:2310.02491},
+  year={2023}
+}
+```

@@ -176,7 +176,7 @@ class SpectralConv2d(nn.Module):
         return x
 
 class FNO2d(nn.Module):
-    def __init__(self, modes1, modes2,  width):
+    def __init__(self, modes1, modes2, width):
         super(FNO2d, self).__init__()
 
         """
@@ -251,96 +251,13 @@ class FNO2d(nn.Module):
         gridy = gridy.reshape(1, 1, size_y, 1).repeat([batchsize, size_x, 1, 1])
         return torch.cat((gridx, gridy), dim=-1).to(device)
 
-#class FNO2d_RNN(nn.Module):
-#    """
-#    This is the regular FNO for now
-#    """
-#    def __init__(self, modes1, modes2,  width):
-#        super(FNO2d_RNN, self).__init__()
-#
-#        """
-#        The overall network. It contains 4 layers of the Fourier layer.
-#        1. Lift the input to the desire channel dimension by self.fc0 .
-#        2. 4 layers of the integral operators u' = (W + K)(u).
-#            W defined by self.w; K defined by self.conv .
-#        3. Project from the channel space to the output space by self.fc1 and self.fc2 .
-#        
-#        input: the solution of the coefficient function and locations (a(x, y), x, y)
-#        input shape: (batchsize, x=s, y=s, c=3)
-#        output: the solution 
-#        output shape: (batchsize, x=s, y=s, c=1)
-#        """
-#
-#        self.modes1 = modes1
-#        self.modes2 = modes2
-#        self.width = width
-#        self.padding = 9 # pad the domain if input is non-periodic
-#        self.fc0 = nn.Linear(3, self.width) # input channel is 3: (a(x, y), x, y)
 
-#        self.conv0 = SpectralConv2d(self.width, self.width, self.modes1, self.modes2)
-#        self.conv1 = SpectralConv2d(self.width, self.width, self.modes1, self.modes2)
-#        self.conv2 = SpectralConv2d(self.width, self.width, self.modes1, self.modes2)
-#        self.conv3 = SpectralConv2d(self.width, self.width, self.modes1, self.modes2)
-#        self.w0 = nn.Conv2d(self.width, self.width, 1)
-#        self.w1 = nn.Conv2d(self.width, self.width, 1)
-#        self.w2 = nn.Conv2d(self.width, self.width, 1)
-#        self.w3 = nn.Conv2d(self.width, self.width, 1)
-#
-#        self.fc1 = nn.Linear(self.width, 128)
-#        self.fc2 = nn.Linear(128, 1)
-#
-#
-#    def forward(self, x):
-#        grid = self.get_grid(x.shape, x.device)
-#        x = torch.cat((x, grid), dim=-1)
-#        x = self.fc0(x)
-#        x = x.permute(0, 3, 1, 2)
-#        x = F.pad(x, [0,self.padding, 0,self.padding])
-#
-#        x1 = self.conv0(x)
-#        x2 = self.w0(x)
-#        x = x1 + x2
-#        x = F.gelu(x)
-#
-#        x1 = self.conv1(x)
-#        x2 = self.w1(x)
-#        x = x1 + x2
-#        x = F.gelu(x)
-#
-#        x1 = self.conv2(x)
-#        x2 = self.w2(x)
-#        x = x1 + x2
-#        x = F.gelu(x)
-#
-#        x1 = self.conv3(x)
-#        x2 = self.w3(x)
-#        x = x1 + x2
-#
-#        x = x[..., :-self.padding, :-self.padding]
-#        x = x.permute(0, 2, 3, 1)
-#
-#        x = self.fc1(x)
-#        x = F.gelu(x)
-#        x = self.fc2(x)
-#
-#        return x
-#    
-#
-#    def get_grid(self, shape, device):
-#        batchsize, size_x, size_y = shape[0], shape[1], shape[2]
-#        gridx = torch.tensor(np.linspace(0, 1, size_x), dtype=torch.float)
-#        gridx = gridx.reshape(1, size_x, 1, 1).repeat([batchsize, 1, size_y, 1])
-#        gridy = torch.tensor(np.linspace(0, 1, size_y), dtype=torch.float)
-#        gridy = gridy.reshape(1, 1, size_y, 1).repeat([batchsize, size_x, 1, 1])
-#        return torch.cat((gridx, gridy), dim=-1).to(device)
-
-
-class FNO2d_RNN(nn.Module):
+class FNO2d_RNN(FNO2d):
     """
     For already trained models this is named FNO2d_RNN2.
     """
-    def __init__(self, modes1, modes2,  width, hidden_rnn, x_len):
-        super(FNO2d_RNN, self).__init__()
+    def __init__(self, modes1, modes2, width, hidden_rnn, x_len):
+        super().__init__(modes1, modes2, width)
 
         """
         The overall network. It contains 4 layers of the Fourier layer.
@@ -355,28 +272,11 @@ class FNO2d_RNN(nn.Module):
         output shape: (batchsize, x=s, y=s, c=1)
         """
 
-        self.modes1 = modes1
-        self.modes2 = modes2
-        self.width = width
         self.hidden_rnn = hidden_rnn
         
         #n_neurons = 200
         #x_len = 50
         self.x_len = x_len
-        self.padding = 9 # pad the domain if input is non-periodic
-        self.fc0 = nn.Linear(3, self.width) # input channel is 3: (a(x, y), x, y)
-
-        self.conv0 = SpectralConv2d(self.width, self.width, self.modes1, self.modes2)
-        self.conv1 = SpectralConv2d(self.width, self.width, self.modes1, self.modes2)
-        self.conv2 = SpectralConv2d(self.width, self.width, self.modes1, self.modes2)
-        self.conv3 = SpectralConv2d(self.width, self.width, self.modes1, self.modes2)
-        self.w0 = nn.Conv2d(self.width, self.width, 1)
-        self.w1 = nn.Conv2d(self.width, self.width, 1)
-        self.w2 = nn.Conv2d(self.width, self.width, 1)
-        self.w3 = nn.Conv2d(self.width, self.width, 1)
-
-        self.fc1 = nn.Linear(self.width, 128)
-        self.fc2 = nn.Linear(128, 1)
 
         self.rnn = nn.RNN(self.x_len, self.hidden_rnn, 1, batch_first=True, nonlinearity='tanh')
 
@@ -387,37 +287,7 @@ class FNO2d_RNN(nn.Module):
 
 
     def forward(self, x):
-        grid = self.get_grid(x.shape, x.device)
-        x = torch.cat((x, grid), dim=-1)
-        x = self.fc0(x)
-        x = x.permute(0, 3, 1, 2)
-        x = F.pad(x, [0,self.padding, 0,self.padding])
-
-        x1 = self.conv0(x)
-        x2 = self.w0(x)
-        x = x1 + x2
-        x = F.gelu(x)
-
-        x1 = self.conv1(x)
-        x2 = self.w1(x)
-        x = x1 + x2
-        x = F.gelu(x)
-
-        x1 = self.conv2(x)
-        x2 = self.w2(x)
-        x = x1 + x2
-        x = F.gelu(x)
-
-        x1 = self.conv3(x)
-        x2 = self.w3(x)
-        x = x1 + x2
-
-        x = x[..., :-self.padding, :-self.padding]
-        x = x.permute(0, 2, 3, 1)
-
-        x = self.fc1(x)
-        x = F.gelu(x)
-        x = self.fc2(x)
+        x = super().forward(x)
 
         x = x.reshape(x.size(0), x.size(1), x.size(2))
 
@@ -428,20 +298,12 @@ class FNO2d_RNN(nn.Module):
         return x.to(x.device)
     
 
-    def get_grid(self, shape, device):
-        batchsize, size_x, size_y = shape[0], shape[1], shape[2]
-        gridx = torch.tensor(np.linspace(0, 1, size_x), dtype=torch.float)
-        gridx = gridx.reshape(1, size_x, 1, 1).repeat([batchsize, 1, size_y, 1])
-        gridy = torch.tensor(np.linspace(0, 1, size_y), dtype=torch.float)
-        gridy = gridy.reshape(1, 1, size_y, 1).repeat([batchsize, size_x, 1, 1])
-        return torch.cat((gridx, gridy), dim=-1).to(device)
-
-class FNO2d_LSTM(nn.Module):
+class FNO2d_LSTM(FNO2d):
     """
     For already trained models this is named FNO2d_RNN2.
     """
     def __init__(self, modes1, modes2,  width, hidden_rnn, x_len):
-        super(FNO2d_LSTM, self).__init__()
+        super().__init__(modes1, modes2, width)
 
         """
         The overall network. It contains 4 layers of the Fourier layer.
@@ -456,28 +318,11 @@ class FNO2d_LSTM(nn.Module):
         output shape: (batchsize, x=s, y=s, c=1)
         """
 
-        self.modes1 = modes1
-        self.modes2 = modes2
-        self.width = width
         self.hidden_rnn = hidden_rnn
         
         #n_neurons = 200
         #x_len = 50
         self.x_len = x_len
-        self.padding = 9 # pad the domain if input is non-periodic
-        self.fc0 = nn.Linear(3, self.width) # input channel is 3: (a(x, y), x, y)
-
-        self.conv0 = SpectralConv2d(self.width, self.width, self.modes1, self.modes2)
-        self.conv1 = SpectralConv2d(self.width, self.width, self.modes1, self.modes2)
-        self.conv2 = SpectralConv2d(self.width, self.width, self.modes1, self.modes2)
-        self.conv3 = SpectralConv2d(self.width, self.width, self.modes1, self.modes2)
-        self.w0 = nn.Conv2d(self.width, self.width, 1)
-        self.w1 = nn.Conv2d(self.width, self.width, 1)
-        self.w2 = nn.Conv2d(self.width, self.width, 1)
-        self.w3 = nn.Conv2d(self.width, self.width, 1)
-
-        self.fc1 = nn.Linear(self.width, 128)
-        self.fc2 = nn.Linear(128, 1)
 
         self.lstm = nn.LSTM(self.x_len, self.hidden_rnn, 1, batch_first=True)
 
@@ -488,37 +333,7 @@ class FNO2d_LSTM(nn.Module):
 
 
     def forward(self, x):
-        grid = self.get_grid(x.shape, x.device)
-        x = torch.cat((x, grid), dim=-1)
-        x = self.fc0(x)
-        x = x.permute(0, 3, 1, 2)
-        x = F.pad(x, [0,self.padding, 0,self.padding])
-
-        x1 = self.conv0(x)
-        x2 = self.w0(x)
-        x = x1 + x2
-        x = F.gelu(x)
-
-        x1 = self.conv1(x)
-        x2 = self.w1(x)
-        x = x1 + x2
-        x = F.gelu(x)
-
-        x1 = self.conv2(x)
-        x2 = self.w2(x)
-        x = x1 + x2
-        x = F.gelu(x)
-
-        x1 = self.conv3(x)
-        x2 = self.w3(x)
-        x = x1 + x2
-
-        x = x[..., :-self.padding, :-self.padding]
-        x = x.permute(0, 2, 3, 1)
-
-        x = self.fc1(x)
-        x = F.gelu(x)
-        x = self.fc2(x)
+        x = super().forward(x)
 
         x = x.reshape(x.size(0), x.size(1), x.size(2))
 
@@ -527,22 +342,14 @@ class FNO2d_LSTM(nn.Module):
         x = self.fc_out(x) #To return only the last timestep: [:, -1, :]) 
 
         return x.to(x.device)
-    
 
-    def get_grid(self, shape, device):
-        batchsize, size_x, size_y = shape[0], shape[1], shape[2]
-        gridx = torch.tensor(np.linspace(0, 1, size_x), dtype=torch.float)
-        gridx = gridx.reshape(1, size_x, 1, 1).repeat([batchsize, 1, size_y, 1])
-        gridy = torch.tensor(np.linspace(0, 1, size_y), dtype=torch.float)
-        gridy = gridy.reshape(1, 1, size_y, 1).repeat([batchsize, size_x, 1, 1])
-        return torch.cat((gridx, gridy), dim=-1).to(device)
 
-class FNO2d_GRU(nn.Module):
+class FNO2d_GRU(FNO2d):
     """
     For already trained models this is named FNO2d_RNN2.
     """
     def __init__(self, modes1, modes2,  width, hidden_rnn, x_len):
-        super(FNO2d_GRU, self).__init__()
+        super().__init__(modes1, modes2, width)
 
         """
         The overall network. It contains 4 layers of the Fourier layer.
@@ -557,28 +364,11 @@ class FNO2d_GRU(nn.Module):
         output shape: (batchsize, x=s, y=s, c=1)
         """
 
-        self.modes1 = modes1
-        self.modes2 = modes2
-        self.width = width
         self.hidden_rnn = hidden_rnn
         
         #n_neurons = 200
         #x_len = 50
         self.x_len = x_len
-        self.padding = 9 # pad the domain if input is non-periodic
-        self.fc0 = nn.Linear(3, self.width) # input channel is 3: (a(x, y), x, y)
-
-        self.conv0 = SpectralConv2d(self.width, self.width, self.modes1, self.modes2)
-        self.conv1 = SpectralConv2d(self.width, self.width, self.modes1, self.modes2)
-        self.conv2 = SpectralConv2d(self.width, self.width, self.modes1, self.modes2)
-        self.conv3 = SpectralConv2d(self.width, self.width, self.modes1, self.modes2)
-        self.w0 = nn.Conv2d(self.width, self.width, 1)
-        self.w1 = nn.Conv2d(self.width, self.width, 1)
-        self.w2 = nn.Conv2d(self.width, self.width, 1)
-        self.w3 = nn.Conv2d(self.width, self.width, 1)
-
-        self.fc1 = nn.Linear(self.width, 128)
-        self.fc2 = nn.Linear(128, 1)
 
         self.gru = nn.GRU(self.x_len, self.hidden_rnn, 1, batch_first=True)
 
@@ -589,37 +379,7 @@ class FNO2d_GRU(nn.Module):
 
 
     def forward(self, x):
-        grid = self.get_grid(x.shape, x.device)
-        x = torch.cat((x, grid), dim=-1)
-        x = self.fc0(x)
-        x = x.permute(0, 3, 1, 2)
-        x = F.pad(x, [0,self.padding, 0,self.padding])
-
-        x1 = self.conv0(x)
-        x2 = self.w0(x)
-        x = x1 + x2
-        x = F.gelu(x)
-
-        x1 = self.conv1(x)
-        x2 = self.w1(x)
-        x = x1 + x2
-        x = F.gelu(x)
-
-        x1 = self.conv2(x)
-        x2 = self.w2(x)
-        x = x1 + x2
-        x = F.gelu(x)
-
-        x1 = self.conv3(x)
-        x2 = self.w3(x)
-        x = x1 + x2
-
-        x = x[..., :-self.padding, :-self.padding]
-        x = x.permute(0, 2, 3, 1)
-
-        x = self.fc1(x)
-        x = F.gelu(x)
-        x = self.fc2(x)
+        x = super().forward(x)
 
         x = x.reshape(x.size(0), x.size(1), x.size(2))
 
@@ -628,15 +388,6 @@ class FNO2d_GRU(nn.Module):
         x = self.fc_out(x) #To return only the last timestep: [:, -1, :]) 
 
         return x.to(x.device)
-    
-
-    def get_grid(self, shape, device):
-        batchsize, size_x, size_y = shape[0], shape[1], shape[2]
-        gridx = torch.tensor(np.linspace(0, 1, size_x), dtype=torch.float)
-        gridx = gridx.reshape(1, size_x, 1, 1).repeat([batchsize, 1, size_y, 1])
-        gridy = torch.tensor(np.linspace(0, 1, size_y), dtype=torch.float)
-        gridy = gridy.reshape(1, 1, size_y, 1).repeat([batchsize, size_x, 1, 1])
-        return torch.cat((gridx, gridy), dim=-1).to(device)
 
 
 ################################################################
@@ -772,9 +523,9 @@ class FNO3d(nn.Module):
         gridz = gridz.reshape(1, 1, 1, size_z, 1).repeat([batchsize, size_x, size_y, 1, 1])
         return torch.cat((gridx, gridy, gridz), dim=-1).to(device)
 
-class FNO3d_RNN(nn.Module):
+class FNO3d_RNN(FNO3d):
     def __init__(self, modes1, modes2, modes3, width, hidden_rnn, x_len):
-        super(FNO3d_RNN, self).__init__()
+        super().__init__(modes1, modes2, modes3, width)
 
         """
         The overall network. It contains 4 layers of the Fourier layer.
@@ -789,67 +540,17 @@ class FNO3d_RNN(nn.Module):
         output shape: (batchsize, x=64, y=64, t=40, c=1)
         """
 
-        self.modes1 = modes1
-        self.modes2 = modes2
-        self.modes3 = modes3
-        self.width = width
         self.x_len = x_len
         self.hidden_rnn = hidden_rnn
-        self.padding = 6 # pad the domain if input is non-periodic
-        self.fc0 = nn.Linear(4, self.width)
-        # input channel is 12: the solution of the first 10 timesteps + 3 locations (u(1, x, y), ..., u(10, x, y),  x, y, t)
-
-        self.conv0 = SpectralConv3d(self.width, self.width, self.modes1, self.modes2, self.modes3)
-        self.conv1 = SpectralConv3d(self.width, self.width, self.modes1, self.modes2, self.modes3)
-        self.conv2 = SpectralConv3d(self.width, self.width, self.modes1, self.modes2, self.modes3)
-        self.conv3 = SpectralConv3d(self.width, self.width, self.modes1, self.modes2, self.modes3)
-        self.w0 = nn.Conv3d(self.width, self.width, 1)
-        self.w1 = nn.Conv3d(self.width, self.width, 1)
-        self.w2 = nn.Conv3d(self.width, self.width, 1)
-        self.w3 = nn.Conv3d(self.width, self.width, 1)
-        self.bn0 = torch.nn.BatchNorm3d(self.width)
-        self.bn1 = torch.nn.BatchNorm3d(self.width)
-        self.bn2 = torch.nn.BatchNorm3d(self.width)
-        self.bn3 = torch.nn.BatchNorm3d(self.width)
-
-        self.fc1 = nn.Linear(self.width, 128)
-        self.fc2 = nn.Linear(128, 1)
+    
         self.rnn = nn.RNN(self.x_len, self.hidden_rnn, 1, batch_first=True, nonlinearity='tanh')
 
         # Readout layer
         self.fc_out = nn.Linear(self.hidden_rnn, self.x_len)
 
     def forward(self, x):
-        grid = self.get_grid(x.shape, x.device)
-        x = torch.cat((x, grid), dim=-1)
-        x = self.fc0(x)
-        x = x.permute(0, 4, 1, 2, 3)
-        x = F.pad(x, [0,self.padding]) # pad the domain if input is non-periodic
+        x = super().forward(x)
 
-        x1 = self.conv0(x)
-        x2 = self.w0(x)
-        x = x1 + x2
-        x = F.gelu(x)
-
-        x1 = self.conv1(x)
-        x2 = self.w1(x)
-        x = x1 + x2
-        x = F.gelu(x)
-
-        x1 = self.conv2(x)
-        x2 = self.w2(x)
-        x = x1 + x2
-        x = F.gelu(x)
-
-        x1 = self.conv3(x)
-        x2 = self.w3(x)
-        x = x1 + x2
-
-        x = x[..., :-self.padding]
-        x = x.permute(0, 2, 3, 4, 1) # pad the domain if input is non-periodic
-        x = self.fc1(x)
-        x = F.gelu(x)
-        x = self.fc2(x)
         x = x.permute(0, 3, 1, 2, 4)
 
         x = torch.flatten(x, 2, -1)
@@ -859,13 +560,3 @@ class FNO3d_RNN(nn.Module):
         x = self.fc_out(x)#[:, -1, :]) 
 
         return x
-
-    def get_grid(self, shape, device):
-        batchsize, size_x, size_y, size_z = shape[0], shape[1], shape[2], shape[3]
-        gridx = torch.tensor(np.linspace(0, 1, size_x), dtype=torch.float)
-        gridx = gridx.reshape(1, size_x, 1, 1, 1).repeat([batchsize, 1, size_y, size_z, 1])
-        gridy = torch.tensor(np.linspace(0, 1, size_y), dtype=torch.float)
-        gridy = gridy.reshape(1, 1, size_y, 1, 1).repeat([batchsize, size_x, 1, size_z, 1])
-        gridz = torch.tensor(np.linspace(0, 1, size_z), dtype=torch.float)
-        gridz = gridz.reshape(1, 1, 1, size_z, 1).repeat([batchsize, size_x, size_y, 1, 1])
-        return torch.cat((gridx, gridy, gridz), dim=-1).to(device)

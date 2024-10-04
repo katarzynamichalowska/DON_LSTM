@@ -14,11 +14,11 @@ import sys
 import os
 sys.path.insert(0, './modules')
 sys.path.insert(0, './modules/fno')
-from modules.plotting import plot_history_all, plot_full_history
+from modules.plotting import plot_full_history
 from modules.data_manipulation import resample_g_xt
 from modules.fno.data_manipulation import preprocess_data
 from modules.fno.utilities3 import UnitGaussianNormalizer, LpLoss, count_params
-from modules.fno.fno_operations import FNO2d, FNO3d, FNO2d_RNN, FNO2d_LSTM, FNO2d_GRU, FNO3d_RNN, SpectralConv2d, data_loaders, train_step, evaluate_model, train_model
+from modules.fno.fno_operations import data_loaders, evaluate_model
 from modules.fno.Adam import Adam
 import modules.log_functions as log_functions
 import modules.dir_functions as dir_functions
@@ -36,32 +36,24 @@ import torch.nn as nn
 
 #--------------------     PARAMS FOR TESTING     --------------------#
 
-p = dir_functions.load_params('params_fno.yml')
+p = dir_functions.load_params('params_fno_test.yml')
 
 #--------------------       PATHS       --------------------#
 
 # Output folder
-output_folder = dir_functions.make_output_dir(p["MODEL_FOLDER"], p["PROBLEM_NAME"], p["N_HIGH_RES"], p["MODELNAME"], p["START_FROM_CHECKPOINT"])
+output_folder = dir_functions.make_output_dir(p["MODEL_FOLDER"], p["PROBLEM_NAME"], p["N_HIGH_RES"], p["MODELNAME"], p["CHECKPOINT_TO_TEST"])
 
+test_folder = dir_functions.make_output_dir(p["TEST_FOLDER"], p["PROBLEM_NAME"], p["N_HIGH_RES"], p["MODELNAME"], p["CHECKPOINT_TO_TEST"])
+test_folder = os.path.join(test_folder, f"checkpoint_{p['CHECKPOINT_TO_TEST']}")
+if not os.path.exists(test_folder):
+    os.makedirs(test_folder)
+    
 # Directories
 checkpoint_dir = os.path.join(output_folder, "checkpoints")
-logs_path = os.path.join(output_folder, "log.out")
-params_log_path = os.path.join(output_folder, "params.txt")
 training_log_path = os.path.join(output_folder, "training_log.out")
-
 
 if not os.path.exists(checkpoint_dir):
     os.makedirs(checkpoint_dir)
-
-with open(params_log_path, 'w') as params_log:
-    params_log.write(log_functions.print_params(p))
-params_log.close()
-
-logs = open(logs_path, 'a')
-logs.write(log_functions.print_time("Program started"))
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-logs.write(f"Using device: {device}")
-logs.write(log_functions.print_params(p))
 
 PATH_MODEL = os.path.join(output_folder, p["MODELNAME"])
 t1 = default_timer()
@@ -100,26 +92,7 @@ print('Preprocessing finished, time used:', t2-t1)
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-if not p["START_FROM_CHECKPOINT"]:
-    if p["RNN_LAYER"] is None:
-        if p["INPUT_3D"]:
-            model = FNO3d(p["MODES"], p["MODES"], p["MODES"], p["WIDTH"])
-        else:
-            model = FNO2d(p["MODES"], p["MODES"], p["WIDTH"])
-    else:
-        if p["INPUT_3D"]:
-            # TODO FNO3d_RNN can be inherited from FNO3d
-            model = FNO3d_RNN(p["MODES"], p["MODES"], p["MODES"], p["WIDTH"], t_len, S)
-        else:
-            # TODO FNO2d_LSTM, FNO2d_RNN and FNO2d_GRU can be inherited from FNO2d
-            if p["LSTM"]:
-                model = FNO2d_LSTM(p["MODES"], p["MODES"], p["WIDTH"], t_len, S)
-            elif p["GRU"]:
-                model = FNO2d_GRU(p["MODES"], p["MODES"], p["WIDTH"], t_len, S)
-            else:
-                model = FNO2d_RNN(p["MODES"], p["MODES"], p["WIDTH"], t_len, S)
-else:
-    model = load_fno_model(output_folder, p["MODELNAME"], device, cp=p["START_FROM_CHECKPOINT"])
+model = load_fno_model(output_folder, p["MODELNAME"], device, cp=p["CHECKPOINT_TO_TEST"])
 
 if device == torch.device("cuda"):
     model = model.cuda()
@@ -138,42 +111,12 @@ else:
 
 print("Nr model parameters: ", count_params(model))
 
-logs.close()
-logs = open(logs_path, 'a')
-
-#--------------------       TRAIN       --------------------#
-
-optimizer = Adam(model.parameters(), lr=p["LEARNING_RATE"], weight_decay=1e-4)
-
-
-scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=p["STEP_SIZE"], gamma=p["GAMMA"])
-
-history, log_history = train_model(model, 
-                                    train_loader=train_loader, 
-                                    val_loader=val_loader, 
-                                    n_epochs=p["N_EPOCHS"], 
-                                    optimizer=optimizer, 
-                                    scheduler=scheduler, 
-                                    checkpoints_folder=checkpoint_dir,
-                                    checkpoints_freq=p["CHECKPOINTS_FREQ"], 
-                                    log_output_freq=p["LOG_OUTPUT_FREQ"], 
-                                    log_temp_path=training_log_path, 
-                                    last_cp=0, cuda=p["CUDA"])
-
-torch.save(model, PATH_MODEL)
-
-plot_name = "training_history"
-plot_history_all(history, output_folder, plot_name)
-logs.write(log_functions.print_training_history(log_history))
-
 #-------------------- MODEL EVALUATION --------------------#
 
 # TODO rescale back to original scale
 mse_test, y_pred_all, y_all = evaluate_model(model, data_loader=test_loader, inverse_norm=False, g_u_normalizer=None, cuda=p["CUDA"])
 
-logs.write("RMSE test (normal scale): {}\n".format(np.round(np.sqrt(mse_test),5)))
+with open(os.path.join(test_folder, "stats.txt"), 'w') as f:
+    f.write("RMSE test (normal scale): {}\n".format(np.round(np.sqrt(mse_test),5)))
 
-plot_full_history(output_folder, training_log_path, plot_name="full_training_history")
-
-logs.write(log_functions.print_time("Program finished"))
-logs.close()
+plot_full_history(test_folder, os.path.join(output_folder, "training_log.out"), plot_name="full_training_history", checkpoint=p['CHECKPOINT_TO_TEST'])
