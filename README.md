@@ -155,4 +155,4 @@ If you use DON_LSTM in an academic paper, please cite as:
 
 ## Code Contributors
 
-[Jeffrey Lu](https://github.com/Toffrox) ([University of Waterloo](https://uwaterloo.ca/))
+* [Jeffrey Lu](https://github.com/Toffrox) ([University of Waterloo](https://uwaterloo.ca/))
