@@ -152,3 +152,7 @@ If you use DON_LSTM in an academic paper, please cite as:
   year={2023}
 }
 ```
+
+## Code Contributors
+
+[Jeffrey Lu](https://github.com/Toffrox) ([University of Waterloo](https://uwaterloo.ca/))
