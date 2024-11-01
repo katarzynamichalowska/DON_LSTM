@@ -4,7 +4,7 @@ Parameters are read from the params.py file.
 """
 # TODO: Sys imports are hardcoded.
 import sys
-sys.path.insert(0, './modules')
+sys.path.insert(0, './')
 import numpy as np
 import os
 from modules.training import train_model, eval_in_batches
@@ -18,7 +18,7 @@ from modules.evaluate import evaluate_data
 
 #--------------------     PARAMS FOR TESTING     --------------------#
 
-p = dir_functions.load_params('params_model.yml')
+p = dir_functions.load_params(os.path.join('deeponets', 'params_model.yml'))
 
 #--------------------       PATHS       --------------------#
 

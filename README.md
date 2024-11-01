@@ -56,43 +56,45 @@ The data generation is configured with the params_datagen.yml file.
 
 ## Network training
 
+The files to train a DeepONet and a FNO model are in the `deeponets` and `fno` folders respectively to make the separation between the two more clearer.
+
 ### Training a Vanilla DeepONet and DON-LSTM
 
-The initial script to train a vanilla DeepONet and DON-LSTM is run by doing:
+The initial script to train a vanilla DeepONet and DON-LSTM is run by going into the `deeponets` folder and doing:
 
 ```shell
 python train_model.py
 ```
 
-This script is configured through the file `params_model.yml`. More information on each setting can be found in the **Configuration** section below.
+This script is configured through the file `params_model.yml` in the `deeponets` folder. More information on each setting can be found in the **Configuration** section below.
 
 The model is output in a specified folder from the configuration file. The folder will contain a checkpoints folder that is output in a specified frequency from the configuration file. Once training is complete, plots will be output showing the error over time.
 
 ### Training of the DON-LSTM using a Pre-Trained DON
 
-After training a model, it is possible to use it to train the DON-LSTM. This is done by doing:
+After training a model, it is possible to use it to train the DON-LSTM. This is done by going into the `deeponets` folder and doing:
 
 ```shell
 python train_don_add_lstm.py
 ```
 
-This script is configured through the file `params_don_add_lstm.yml`. The model is outputed in a similar way to the previous script.
+This script is configured through the file `params_don_add_lstm.yml` in the `deeponets` folder. The model is outputed in a similar way to the previous script.
 
 To use this, load a previously trained model using the **LOADED_MODEL** setting. Make sure that **MODEL_FOLDER**, **PROBLEM_NAME**, and **N_HIGH_RES** are the same values as when the loaded model was being trained. **LOAD_CP** chooses which checkpoint of the loaded, pre-trained model to start from. If `null`, then the program will automatically choose the best checkpoint to use using the lowest validation error.
 
 ### Training of Fourier Neural Operators
 
-A FNO model can be trained by doing
+A FNO model can be trained by going into the `fno` folder and doing
 
 ```shell
 python train_fno.py
 ```
 
-This script is configured through the file `params_fno.yml`. The settings should be similar to the other configuration files.
+This script is configured through the file `params_fno.yml` in the `fno` folder. The settings should be similar to the other configuration files.
 
 ### Model Testing
 
-A model can be tested by running:
+A DeepONet model can be tested by going in the `deeponets` folder and running:
 
 ```shell
 python test_model.py
@@ -100,7 +102,7 @@ python test_model.py
 
 This is configured through the file `params_test.yml`.
 
-A FNO model can be tested by running:
+A FNO model can be tested by going in the `fno` folder and running:
 
 ```shell
 python test_fno.py

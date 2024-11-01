@@ -1,3 +1,5 @@
+import sys
+sys.path.insert(0, './')
 import modules.animation as a
 import numpy as np
 import os
@@ -9,7 +11,7 @@ from modules.load_model import load_model
 from modules.plotting import plot_full_history
 import modules.dir_functions as dir_functions
 
-p = dir_functions.load_params('params_test.yml')
+p = dir_functions.load_params(os.path.join('deeponets', 'params_test.yml'))
 
 #--------------------       PATHS       --------------------#
 
