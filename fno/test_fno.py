@@ -10,10 +10,9 @@ The FNO and FNO-RNN models are named: "fno_vanilla*", "fno_rnn*".
 Training parameters can be specified in the params_fno.py file.
 """
 
-import sys
 import os
-sys.path.insert(0, './modules')
-sys.path.insert(0, './modules/fno')
+import sys
+sys.path.insert(0, './')
 from modules.plotting import plot_full_history
 from modules.data_manipulation import resample_g_xt
 from modules.fno.data_manipulation import preprocess_data

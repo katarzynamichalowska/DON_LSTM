@@ -5,7 +5,7 @@ The pre-trained model is loaded from the folder specified in params_don_add_lstm
 """
 
 import sys
-sys.path.insert(0, './modules')
+sys.path.insert(0, './')
 import numpy as np
 import os
 import tensorflow as tf
@@ -22,7 +22,7 @@ from modules.evaluate import evaluate_data
 
 #--------------------     PARAMS FOR TESTING     --------------------#
 
-p = dir_functions.load_params('params_don_add_lstm.yml')
+p = dir_functions.load_params(os.path.join('deeponets', 'params_don_add_lstm.yml'))
 
 DIR_LOAD_MODEL = dir_functions.make_output_dir(p["MODEL_FOLDER"], p["PROBLEM_NAME"], p["N_HIGH_RES"], p["LOADED_MODEL"], True)
 
